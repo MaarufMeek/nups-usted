@@ -25,7 +25,7 @@ else:
 # ---------------------------
 # Security
 # ---------------------------
-SECRET_KEY = env_config('SECRET_KEY')
+SECRET_KEY = os.environ.get("SECRET_KEY") or env_config('SECRET_KEY')
 DEBUG = env_config('DEBUG', cast=bool)
 ALLOWED_HOSTS = env_config('ALLOWED_HOSTS', default='localhost,127.0.0.1',
                            cast=lambda v: [s.strip() for s in v.split(',')])
