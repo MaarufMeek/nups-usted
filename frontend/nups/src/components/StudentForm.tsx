@@ -332,7 +332,7 @@ const StudentForm = () => {
                                         Wings of Choice (Select multiple)
                                     </label>
                                     <div
-                                        className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 border border-blue-200 rounded bg-blue-50/30">
+                                        className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 border border-blue-200 rounded bg-blue-50/30">
                                         {wings.map((wing) => (
                                             <label
                                                 key={wing.id}

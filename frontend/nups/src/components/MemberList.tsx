@@ -195,21 +195,21 @@ const MembersList = () => {
                             <tbody className="divide-y divide-gray-200">
                             {students.map((student) => (
                                 <tr key={student.id} className="hover:bg-blue-50 transition">
-                                    <td className="px-6 py-4 whitespace-nowrap font-medium">
+                                    <td className="px-6 py-1 whitespace-nowrap font-medium">
                                         {student.first_name} {student.last_name}
                                         {student.other_name && ` ${student.other_name}`}
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">{student.contact || '—'}</td>
-                                    <td className="px-6 py-4 text-sm">
+                                    <td className="px-6 py-1 text-sm text-gray-600">{student.contact || '—'}</td>
+                                    <td className="px-6 py-1 text-sm">
                       <span
                           className={`px-3 py-1 rounded-full text-xs font-medium`}
                       >
                         {student.gender || '—'}
                       </span>
                                     </td>
-                                    <td className="px-6 py-4 text-sm">{student.hall?.name || '—'}</td>
-                                    <td className="px-6 py-4 text-sm">{student.program?.name || '—'}</td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-1 text-sm">{student.hall?.name || '—'}</td>
+                                    <td className="px-6 py-1 text-sm">{student.program?.name || '—'}</td>
+                                    <td className="px-6 py-1">
                                         <button
                                             onClick={() => setSelectedStudent(student)}
                                             className="p-2 hover:bg-blue-100 rounded-lg transition text-blue-600"
