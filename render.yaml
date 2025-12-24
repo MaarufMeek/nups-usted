@@ -2,7 +2,7 @@ databases:
   - name: nupsdb
     plan: free
     databaseName: nupsdb
-    user: nupsUser
+    user: nupsuser
 
 services:
   - type: web
