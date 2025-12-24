@@ -1,0 +1,22 @@
+databases:
+  - name: nups-db
+    plan: free
+    databaseName: nups-db
+    user: nups-user
+
+services:
+  - type: web
+    plan: free
+    name: nups-api
+    runtime: python
+    buildCommand: './build.sh'
+    startCommand: 'python -m gunicorn nups.asgi:application -k uvicorn.workers.UvicornWorker'
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nups-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: WEB_CONCURRENCY
+        value: 4
