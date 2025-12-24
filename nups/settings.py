@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import timedelta
 from pathlib import Path
 
@@ -22,16 +23,19 @@ if LOCAL_ENV_PATH.exists():
 def get_env(key, default=None, cast=None):
     """
     Priority:
-    1. Real environment variables (Render, system)
-    2. Local .env file (if present)
+    1. Environment variables (Render / system)
+    2. Local .env file (if exists)
     3. Default
+    Cast is always applied if provided
     """
-    if key in os.environ:
-        value = os.environ.get(key)
-        return cast(value) if cast else value
-    if env_config:
-        return env_config(key, default=default, cast=cast)
-    return default
+    value = os.environ.get(key)
+    if value is None and env_config:
+        value = env_config(key, default=default)
+    if value is None:
+        value = default
+    if cast:
+        return cast(value)
+    return value
 
 # ---------------------------
 # Security
@@ -40,10 +44,11 @@ SECRET_KEY = get_env("SECRET_KEY", "dev-secret-key")
 
 DEBUG = get_env("DEBUG", False, cast=lambda v: str(v).lower() == "true")
 
+# ALLOWED_HOSTS: use JSON format in Render, e.g. ["myapp.onrender.com"]
 ALLOWED_HOSTS = get_env(
     "ALLOWED_HOSTS",
-    default="localhost,127.0.0.1",
-    cast=lambda v: [s.strip() for s in v.split(",")]
+    '["localhost","127.0.0.1"]',
+    cast=lambda v: json.loads(v) if isinstance(v, str) else v
 )
 
 # ---------------------------
@@ -153,8 +158,8 @@ SIMPLE_JWT = {
 # ---------------------------
 CORS_ALLOWED_ORIGINS = get_env(
     "CORS_ALLOWED_ORIGINS",
-    default="http://localhost:3000,http://localhost:5173",
-    cast=lambda v: [s.strip() for s in v.split(",")]
+    default='["http://localhost:3000","http://localhost:5173"]',
+    cast=lambda v: json.loads(v) if isinstance(v, str) else v
 )
 
 CORS_ALLOW_ALL_ORIGINS = get_env("CORS_ALLOW_ALL_ORIGINS", False, cast=bool)
