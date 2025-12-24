@@ -13,28 +13,43 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ---------------------------
 # Environment Configuration
 # ---------------------------
-# Paths for secret files
-RENDER_ENV_PATH = '/etc/secrets/.env'
 LOCAL_ENV_PATH = BASE_DIR / '.env'
 
-if Path(RENDER_ENV_PATH).exists():
-    env_config = Config(RepositoryEnv(RENDER_ENV_PATH))
-else:
+env_config = None
+if LOCAL_ENV_PATH.exists():
     env_config = Config(RepositoryEnv(LOCAL_ENV_PATH))
+
+def get_env(key, default=None, cast=None):
+    """
+    Priority:
+    1. Real environment variables (Render, system)
+    2. Local .env file (if present)
+    3. Default
+    """
+    if key in os.environ:
+        value = os.environ.get(key)
+        return cast(value) if cast else value
+    if env_config:
+        return env_config(key, default=default, cast=cast)
+    return default
 
 # ---------------------------
 # Security
 # ---------------------------
-SECRET_KEY = os.environ.get("SECRET_KEY") or env_config('SECRET_KEY')
-DEBUG = env_config('DEBUG', cast=bool)
-ALLOWED_HOSTS = env_config('ALLOWED_HOSTS', default='localhost,127.0.0.1',
-                           cast=lambda v: [s.strip() for s in v.split(',')])
+SECRET_KEY = get_env("SECRET_KEY", "dev-secret-key")
+
+DEBUG = get_env("DEBUG", False, cast=lambda v: str(v).lower() == "true")
+
+ALLOWED_HOSTS = get_env(
+    "ALLOWED_HOSTS",
+    default="localhost,127.0.0.1",
+    cast=lambda v: [s.strip() for s in v.split(",")]
+)
 
 # ---------------------------
 # Installed Apps
 # ---------------------------
 INSTALLED_APPS = [
-    # Django default apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,12 +57,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Third-party apps
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
 
-    # Your apps
     'core.apps.CoreConfig',
 ]
 
@@ -95,8 +108,10 @@ TEMPLATES = [
 # ---------------------------
 DATABASES = {
     'default': dj_database_url.config(
-        'DATABASE_URL',
-        default='postgres://postgres:%40nasarabieni@localhost:5432/nups_db',
+        default=get_env(
+            "DATABASE_URL",
+            "postgres://postgres:%40nasarabieni@localhost:5432/nups_db"
+        ),
         conn_max_age=600
     )
 }
@@ -124,21 +139,27 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=env_config('ACCESS_TOKEN_LIFETIME_MINUTES', cast=int)),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=env_config('REFRESH_TOKEN_LIFETIME_DAYS', cast=int)),
-    'ROTATE_REFRESH_TOKENS': env_config('ROTATE_REFRESH_TOKENS', cast=bool),
+    'ACCESS_TOKEN_LIFETIME': timedelta(
+        minutes=int(get_env("ACCESS_TOKEN_LIFETIME_MINUTES", 60))
+    ),
+    'REFRESH_TOKEN_LIFETIME': timedelta(
+        days=int(get_env("REFRESH_TOKEN_LIFETIME_DAYS", 1))
+    ),
+    'ROTATE_REFRESH_TOKENS': get_env("ROTATE_REFRESH_TOKENS", False, cast=bool),
 }
 
 # ---------------------------
 # CORS Configuration
 # ---------------------------
-CORS_ALLOWED_ORIGINS = env_config(
-    'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://localhost:5173',
-    cast=lambda v: [s.strip() for s in v.split(',')]
+CORS_ALLOWED_ORIGINS = get_env(
+    "CORS_ALLOWED_ORIGINS",
+    default="http://localhost:3000,http://localhost:5173",
+    cast=lambda v: [s.strip() for s in v.split(",")]
 )
-CORS_ALLOW_ALL_ORIGINS = env_config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bool)
+
+CORS_ALLOW_ALL_ORIGINS = get_env("CORS_ALLOW_ALL_ORIGINS", False, cast=bool)
 CORS_ALLOW_CREDENTIALS = True
+
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -154,13 +175,17 @@ CORS_ALLOW_HEADERS = [
 # ---------------------------
 # Email
 # ---------------------------
-EMAIL_BACKEND = env_config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
-EMAIL_HOST = env_config('EMAIL_HOST', default='')
-EMAIL_PORT = env_config('EMAIL_PORT', cast=int, default=587)
-EMAIL_USE_TLS = env_config('EMAIL_USE_TLS', cast=bool, default=True)
-EMAIL_HOST_USER = env_config('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = env_config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = env_config('DEFAULT_FROM_EMAIL', default='noreply@example.com')
+EMAIL_BACKEND = get_env(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend"
+)
+
+EMAIL_HOST = get_env("EMAIL_HOST", "")
+EMAIL_PORT = int(get_env("EMAIL_PORT", 587))
+EMAIL_USE_TLS = get_env("EMAIL_USE_TLS", True, cast=bool)
+EMAIL_HOST_USER = get_env("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = get_env("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = get_env("DEFAULT_FROM_EMAIL", "noreply@example.com")
 
 # ---------------------------
 # Internationalization
@@ -173,16 +198,13 @@ USE_TZ = True
 # ---------------------------
 # Static & Media Files
 # ---------------------------
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-if not DEBUG:
-    # Tell Django to copy static assets into a path called `staticfiles` (this is specific to Render)
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-    # Enable the WhiteNoise storage backend, which compresses static files to reduce disk use
-    # and renames the files with unique names for each version to support long-term caching
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = (
+    'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    if not DEBUG else 'django.contrib.staticfiles.storage.StaticFilesStorage'
+)
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
