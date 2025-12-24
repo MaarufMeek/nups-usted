@@ -2,12 +2,12 @@ databases:
   - name: nupsdb
     plan: free
     databaseName: nupsdb
-    user: nups-user
+    user: nupsUser
 
 services:
   - type: web
     plan: free
-    name: nups-api
+    name: nupsApi
     runtime: python
     buildCommand: './build.sh'
     startCommand: 'python -m gunicorn nups.asgi:application -k uvicorn.workers.UvicornWorker'
