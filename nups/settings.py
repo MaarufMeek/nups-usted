@@ -95,7 +95,7 @@ ASGI_APPLICATION = "nups.asgi.application"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "frontend" / "nups" / "dist"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -192,6 +192,11 @@ STATICFILES_STORAGE = (
     if not DEBUG
     else "django.contrib.staticfiles.storage.StaticFilesStorage"
 )
+
+STATICFILES_DIRS = [
+    BASE_DIR / "frontend" / "nups" / "dist" / "assets",  # Vite puts JS/CSS/images in assets
+]
+
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
