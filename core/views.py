@@ -151,20 +151,20 @@ WINGS = [
     "Vessels of Inspiration",
 ]
 
-@api_view(['POST'])
+@api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 def populate_initial_data(request):
     # Programs
     created_programs = []
     for program_name in PROGRAMS:
-        obj, created = Program.objects.create(name=program_name)
+        obj, created = Program.objects.get_or_create(name=program_name)
         if created:
             created_programs.append(program_name)
 
     # Wings
     created_wings = []
     for wing_name in WINGS:
-        obj, created = Wing.objects.create(name=wing_name)
+        obj, created = Wing.objects.get_or_create(name=wing_name)
         if created:
             created_wings.append(wing_name)
 
