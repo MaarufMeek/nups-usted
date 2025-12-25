@@ -8,6 +8,9 @@ from .models import Program, Hall, StudentProfile, Wing
 from .serializers import ProgramSerializer, HallSerializer, StudentProfileSerializer, WingSerializer
 from django.conf import settings
 
+from django.contrib.auth import get_user_model
+from django.http import HttpResponse
+
 
 class ProgramViewSet(viewsets.ModelViewSet):
     queryset = Program.objects.all()
@@ -63,5 +66,21 @@ class WingViewSet(viewsets.ModelViewSet):
     queryset = Wing.objects.all()
     serializer_class = WingSerializer
     permission_classes = [AllowAny]
+
+
+
+
+def create_superuser_view(request):
+    User = get_user_model()
+
+    username = "nupsadmin"
+    email = "admin@nups.com"
+    password = "easypassword123!"
+
+    if not User.objects.filter(username=username).exists():
+        User.objects.create_superuser(username=username, email=email, password=password)
+        return HttpResponse("Superuser created successfully!")
+    return HttpResponse("Superuser already exists.")
+
 
 
