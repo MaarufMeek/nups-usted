@@ -37,7 +37,6 @@ const StudentForm = () => {
                 <p className="text-[#FFDA04] font-bold text-xl">
                     <span
                         className="text-[#A61343]"
-                        style={{WebkitTextStroke: "0.5px #FFDA04"}}
                     >
                         AAMUSTED
                     </span>
