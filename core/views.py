@@ -1,4 +1,3 @@
-from django.core.mail import send_mail
 from rest_framework import viewsets
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
 from rest_framework.viewsets import GenericViewSet
@@ -6,7 +5,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .models import Program, Hall, StudentProfile, Wing
 from .serializers import ProgramSerializer, HallSerializer, StudentProfileSerializer, WingSerializer
-from django.conf import settings
 
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
@@ -53,16 +51,7 @@ class StudentViewSet(CreateModelMixin, ListModelMixin, RetrieveModelMixin, Gener
         # save member profile
         student = serializer.save()
         print("Saved")  # debug line
-
-        # send confirmation email
-        if student.email:
-            send_mail(
-                subject="Membership Registration Confirmation",
-                message=f"Dear {student.first_name}, your student profile has been successfully created.",
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[student.email],
-                fail_silently=False
-            )
+        # Email sending removed for now
 
 
 
