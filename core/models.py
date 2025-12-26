@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 # =========================
@@ -83,6 +84,7 @@ class StudentProfile(models.Model):
     )
 
     # ID Picture upload
+    # Will use DEFAULT_FILE_STORAGE from settings (Cloudinary if enabled, local otherwise)
     id_picture = models.ImageField(
         upload_to="id_pictures/",
         blank=True,
