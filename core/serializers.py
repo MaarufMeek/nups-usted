@@ -56,6 +56,17 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     hall = HallSerializer(source='hall_of_affiliation', read_only=True)
     emergency_contact = EmergencyContactSerializer(read_only=True)
     emergency_contact_data = EmergencyContactSerializer(write_only=True, required=False)
+    
+    # Custom ImageField that ensures full URL is returned
+    id_picture = serializers.ImageField(required=False, allow_null=True)
+    
+    def to_representation(self, instance):
+        """Override to ensure id_picture returns full URL"""
+        ret = super().to_representation(instance)
+        if instance.id_picture:
+            # Get the full URL - Cloudinary returns full URL, local returns relative
+            ret['id_picture'] = instance.id_picture.url if hasattr(instance.id_picture, 'url') else str(instance.id_picture)
+        return ret
 
     class Meta:
         model = StudentProfile
