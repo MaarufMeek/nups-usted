@@ -215,10 +215,19 @@ if USE_CLOUDINARY:
     import cloudinary.uploader
     import cloudinary.api
     
+    cloud_name = get_env('CLOUDINARY_CLOUD_NAME', '')
+    api_key = get_env('CLOUDINARY_API_KEY', '')
+    api_secret = get_env('CLOUDINARY_API_SECRET', '')
+    
+    # Log Cloudinary config (without secrets)
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Cloudinary enabled. Cloud name: {cloud_name}, API key set: {bool(api_key)}")
+    
     CLOUDINARY_STORAGE = {
-        'CLOUD_NAME': get_env('CLOUDINARY_CLOUD_NAME', ''),
-        'API_KEY': get_env('CLOUDINARY_API_KEY', ''),
-        'API_SECRET': get_env('CLOUDINARY_API_SECRET', ''),
+        'CLOUD_NAME': cloud_name,
+        'API_KEY': api_key,
+        'API_SECRET': api_secret,
     }
     
     # Configure Cloudinary storage

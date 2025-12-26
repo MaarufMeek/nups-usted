@@ -65,7 +65,32 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         ret = super().to_representation(instance)
         if instance.id_picture:
             # Get the full URL - Cloudinary returns full URL, local returns relative
-            ret['id_picture'] = instance.id_picture.url if hasattr(instance.id_picture, 'url') else str(instance.id_picture)
+            try:
+                # Refresh to ensure we have the latest data
+                instance.refresh_from_db()
+                image_url = instance.id_picture.url
+                logger.info(f"Image URL from instance: {image_url}")
+                logger.info(f"Image storage type: {type(instance.id_picture.storage)}")
+                
+                # If it's a relative URL but we're using Cloudinary, try to get the Cloudinary URL directly
+                if image_url.startswith('/media/') and hasattr(instance.id_picture.storage, 'url'):
+                    # Try to get the Cloudinary URL directly from storage
+                    try:
+                        cloudinary_url = instance.id_picture.storage.url(instance.id_picture.name)
+                        if cloudinary_url.startswith('http'):
+                            logger.info(f"Got Cloudinary URL from storage: {cloudinary_url}")
+                            ret['id_picture'] = cloudinary_url
+                        else:
+                            ret['id_picture'] = image_url
+                    except:
+                        ret['id_picture'] = image_url
+                else:
+                    ret['id_picture'] = image_url
+            except Exception as e:
+                logger.error(f"Error getting image URL: {e}", exc_info=True)
+                ret['id_picture'] = str(instance.id_picture) if instance.id_picture else None
+        else:
+            ret['id_picture'] = None
         return ret
 
     class Meta:
@@ -92,6 +117,20 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             # Create the student profile instance
             student = StudentProfile.objects.create(**validated_data)
             logger.info(f"Student profile created with ID: {student.id}")
+            
+            # Refresh instance to get updated Cloudinary URL (Cloudinary uploads async)
+            student.refresh_from_db()
+            
+            # Log image info after creation to debug Cloudinary URL
+            if student.id_picture:
+                try:
+                    image_url = student.id_picture.url
+                    logger.info(f"Image URL after save and refresh: {image_url}")
+                    logger.info(f"Image field name: {student.id_picture.name}")
+                    logger.info(f"Image storage: {student.id_picture.storage}")
+                    logger.info(f"Image storage class: {type(student.id_picture.storage)}")
+                except Exception as e:
+                    logger.error(f"Error getting image URL: {e}", exc_info=True)
             
             # Set ManyToMany relationships (wings)
             if wings_data:
