@@ -275,10 +275,54 @@ export const useStudentForm = () => {
                 if (fileInput) fileInput.value = "";
             } catch (err: any) {
                 if (err.response?.data) {
-                    setValidationErrors(err.response.data);
-                    toast.error("Please correct the highlighted errors.", {
-                        autoClose: 6000,
-                    });
+                    const errorData = err.response.data;
+                    let parsedErrors: Record<string, string[]> = {};
+
+                    // Check if error is a stringified Python dict (from Django)
+                    if (errorData.error && typeof errorData.error === 'string') {
+                        try {
+                            // The error string is in Python dict format
+                            // Example: "{'email': [ErrorDetail(string='student profile with this email already exists.', code='unique')]}"
+                            const errorString = errorData.error;
+                            
+                            // Use regex to extract field names and ErrorDetail messages
+                            // Pattern: 'field_name': [ErrorDetail(string='message', code='code')]
+                            const fieldPattern = /'(\w+)':\s*\[ErrorDetail\(string='([^']+)',\s*code='[^']+'\)\]/g;
+                            let match;
+                            
+                            while ((match = fieldPattern.exec(errorString)) !== null) {
+                                const fieldName = match[1];
+                                const errorMessage = match[2];
+                                parsedErrors[fieldName] = [errorMessage];
+                            }
+                            
+                            // If no matches found, try alternative pattern (without ErrorDetail wrapper)
+                            if (Object.keys(parsedErrors).length === 0) {
+                                // Try simpler pattern: 'field': ['message']
+                                const simplePattern = /'(\w+)':\s*\[['"]([^'"]+)['"]\]/g;
+                                while ((match = simplePattern.exec(errorString)) !== null) {
+                                    parsedErrors[match[1]] = [match[2]];
+                                }
+                            }
+                        } catch (parseError) {
+                            console.error('Error parsing validation errors:', parseError, errorData.error);
+                        }
+                    } else if (typeof errorData === 'object' && !errorData.error) {
+                        // Direct validation errors object (normal case)
+                        parsedErrors = errorData;
+                    }
+
+                    if (Object.keys(parsedErrors).length > 0) {
+                        setValidationErrors(parsedErrors);
+                        toast.error("Please correct the highlighted errors.", {
+                            autoClose: 6000,
+                        });
+                    } else {
+                        // Show general error message
+                        const errorMessage = errorData.detail || errorData.error || "Failed to submit form. Please try again.";
+                        setError(errorMessage);
+                        toast.error(errorMessage);
+                    }
                 } else {
                     toast.error(err.message || "Failed to submit form. Please try again.");
                 }

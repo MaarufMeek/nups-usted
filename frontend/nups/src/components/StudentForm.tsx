@@ -21,6 +21,7 @@ const StudentForm = () => {
         idPreview
     } = useStudentForm();
 
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-blue-50">
@@ -90,7 +91,11 @@ const StudentForm = () => {
                                         onChange={handleChange}
                                         required
                                         placeholder="Enter your first name"
-                                        className="w-full px-4 py-2.5 border border-blue-400 rounded text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-150 ease-in-out placeholder:text-gray-400"
+                                        className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out placeholder:text-gray-400 ${
+                                            validationErrors.first_name
+                                                ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
+                                                : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
+                                        }`}
                                     />
                                     {validationErrors.first_name && (
                                         <p className="text-red-600 text-xs mt-1">
@@ -110,7 +115,11 @@ const StudentForm = () => {
                                         onChange={handleChange}
                                         required
                                         placeholder="Enter your last name"
-                                        className="w-full px-4 py-2.5 border border-blue-400 rounded text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-150 ease-in-out placeholder:text-gray-400"
+                                        className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out placeholder:text-gray-400 ${
+                                            validationErrors.last_name
+                                                ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
+                                                : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
+                                        }`}
                                     />
                                     {validationErrors.last_name && (
                                         <p className="text-red-600 text-xs mt-1">
@@ -143,7 +152,11 @@ const StudentForm = () => {
                                         value={formData.date_of_birth}
                                         onChange={handleChange}
                                         required
-                                        className="w-full px-4 py-2.5 border border-blue-400 rounded text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-150 ease-in-out placeholder:text-gray-400"
+                                        className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out placeholder:text-gray-400 ${
+                                            validationErrors.date_of_birth
+                                                ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
+                                                : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
+                                        }`}
                                     />
                                     {validationErrors.date_of_birth && (
                                         <p className="text-red-600 text-xs mt-1">
@@ -161,7 +174,11 @@ const StudentForm = () => {
                                         value={formData.gender}
                                         onChange={handleChange}
                                         required
-                                        className="w-full px-4 py-2.5 border border-blue-400 rounded text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-150 ease-in-out placeholder:text-gray-400"
+                                        className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out ${
+                                            validationErrors.gender
+                                                ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
+                                                : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
+                                        }`}
                                     >
                                         <option value="Male">Male</option>
                                         <option value="Female">Female</option>
@@ -177,7 +194,11 @@ const StudentForm = () => {
                                         value={formData.marital_status}
                                         onChange={handleChange}
                                         required
-                                        className="w-full px-4 py-2.5 border border-blue-400 rounded text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-150 ease-in-out placeholder:text-gray-400"
+                                        className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out ${
+                                            validationErrors.marital_status
+                                                ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
+                                                : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
+                                        }`}
                                     >
                                         <option value="Single">Single</option>
                                         <option value="Married">Married</option>
@@ -210,7 +231,11 @@ const StudentForm = () => {
                                         required
                                         maxLength={10}
                                         placeholder="e.g., 0244123456"
-                                        className="w-full px-4 py-2.5 border border-blue-400 rounded text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-150 ease-in-out placeholder:text-gray-400"
+                                        className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out placeholder:text-gray-400 ${
+                                            validationErrors.contact
+                                                ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
+                                                : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
+                                        }`}
                                     />
                                     {validationErrors.contact && (
                                         <p className="text-red-600 text-xs mt-1">
@@ -230,7 +255,11 @@ const StudentForm = () => {
                                         onChange={handleChange}
                                         required
                                         placeholder="e.g., student@example.com"
-                                        className="w-full px-4 py-2.5 border border-blue-400 rounded text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-150 ease-in-out placeholder:text-gray-400"
+                                        className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out placeholder:text-gray-400 ${
+                                            validationErrors.email
+                                                ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
+                                                : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
+                                        }`}
                                     />
                                     {validationErrors.email && (
                                         <p className="text-red-600 text-xs mt-1">
@@ -250,7 +279,11 @@ const StudentForm = () => {
                                         onChange={handleChange}
                                         required
                                         placeholder="Enter your residential address"
-                                        className="w-full px-4 py-2.5 border border-blue-400 rounded text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-150 ease-in-out placeholder:text-gray-400"
+                                        className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out placeholder:text-gray-400 ${
+                                            validationErrors.place_of_residence
+                                                ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
+                                                : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
+                                        }`}
                                     />
                                     {validationErrors.place_of_residence && (
                                         <p className="text-red-600 text-xs mt-1">
@@ -280,7 +313,11 @@ const StudentForm = () => {
                                         value={formData.program_id}
                                         onChange={handleChange}
                                         required
-                                        className="w-full px-4 py-2.5 border border-blue-400 rounded text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-150 ease-in-out placeholder:text-gray-400"
+                                        className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out ${
+                                            validationErrors.program_id
+                                                ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
+                                                : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
+                                        }`}
                                     >
                                         <option value={0}>Select Program</option>
                                         {programs.map((program) => (
@@ -305,7 +342,11 @@ const StudentForm = () => {
                                         value={formData.hall_id}
                                         onChange={handleChange}
                                         required
-                                        className="w-full px-4 py-2.5 border border-blue-400 rounded text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-150 ease-in-out placeholder:text-gray-400"
+                                        className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out ${
+                                            validationErrors.hall_id
+                                                ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
+                                                : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
+                                        }`}
                                     >
                                         <option value={0}>Select Hall</option>
                                         {halls.map((hall) => (
@@ -379,7 +420,11 @@ const StudentForm = () => {
                                         maxLength={10}
                                         value={formData.emergency_contact_data?.phone || ""}
                                         onChange={(e: ChangeEvent<HTMLInputElement>) => handleEmergencyPhoneChange(e.target.value)}
-                                        className="w-full px-4 py-2.5 border border-blue-400 rounded text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-all duration-150 ease-in-out placeholder:text-gray-400"
+                                        className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out placeholder:text-gray-400 ${
+                                            validationErrors.emergency_phone
+                                                ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
+                                                : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
+                                        }`}
                                     />
                                     {validationErrors.emergency_phone && (
                                         <p className="text-red-600 text-xs mt-1">
@@ -405,7 +450,11 @@ const StudentForm = () => {
                                 </label>
 
                                 <div
-                                    className="relative w-full min-h-[10rem] border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center overflow-hidden hover:border-blue-600 transition">
+                                    className={`relative w-full min-h-[10rem] border-2 border-dashed rounded-lg flex items-center justify-center overflow-hidden transition ${
+                                        validationErrors.id_picture
+                                            ? "border-red-300 bg-red-50 hover:border-red-400"
+                                            : "border-blue-400 hover:border-blue-600"
+                                    }`}>
                                     {idPreview ? (
                                         <img
                                             src={idPreview}
