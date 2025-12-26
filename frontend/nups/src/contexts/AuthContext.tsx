@@ -10,7 +10,10 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({children}: { children: ReactNode }) => {
-        const [isAuthenticated, setIsAuthenticated] = useState(false);
+        // Check localStorage immediately (synchronously) to avoid race condition on refresh
+        const [isAuthenticated, setIsAuthenticated] = useState(() => {
+            return !!localStorage.getItem("access_token");
+        });
 
         // Login
         const login = async (username: string, password: string): Promise<boolean> => {
@@ -40,13 +43,8 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
             setIsAuthenticated(false);
         };
 
-        // Check auth on app load
-        useEffect(() => {
-            const token = localStorage.getItem("access_token")
-            if(token) {
-                setIsAuthenticated(true);
-            }
-        }, []);
+        // Verify token is still valid on app load (optional - can validate with API if needed)
+        // For now, just checking localStorage is enough since API interceptor handles token refresh
 
         return (
             <AuthContext.Provider value={{isAuthenticated, login, logout}}>

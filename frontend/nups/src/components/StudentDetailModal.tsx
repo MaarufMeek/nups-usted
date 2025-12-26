@@ -11,10 +11,26 @@ interface StudentDetailModalProps {
 
 const StudentDetailModal = ({student, onClose}: StudentDetailModalProps) => {
     const [isClosing, setIsClosing] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
     const handleClose = () => {
         setIsClosing(true);
     };
+
+    // Get initials for fallback avatar
+    const getInitials = () => {
+        const firstInitial = student.first_name?.[0]?.toUpperCase() || '';
+        const lastInitial = student.last_name?.[0]?.toUpperCase() || '';
+        return `${firstInitial}${lastInitial}`;
+    };
+
+    // Simple check: show image only if it exists and hasn't errored
+    const hasImage = student.id_picture && !imageError;
+
+    // Reset image error when student changes
+    useEffect(() => {
+        setImageError(false);
+    }, [student.id]);
 
     console.log("Student Data:", student);
     // Wait for exit animation to finish before calling onClose
@@ -62,25 +78,18 @@ const StudentDetailModal = ({student, onClose}: StudentDetailModalProps) => {
                 <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
                     {/* Photo & Name Section */}
                     <div className="md:col-span-1 flex flex-col items-center">
-                        {student.id_picture ? (
+                        {hasImage ? (
                             <img
                                 src={toAbsoluteBackendUrl(student.id_picture as string)}
                                 alt={`${student.first_name} ${student.last_name}`}
                                 className="w-48 h-48 object-cover rounded-full border-4 border-blue-200 shadow-xl"
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                    (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-                                }}
+                                onError={() => setImageError(true)}
                             />
-                        ) : null}
-
-                        {/* Fallback Avatar */}
-                        {(!student.id_picture || student.id_picture === '') && (
-                            <div
-                                className="w-48 h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center border-4 border-blue-300 shadow-xl">
-                <span className="text-6xl font-light text-blue-700">
-                  {student.first_name?.[0]?.toUpperCase() || ''}{student.last_name?.[0]?.toUpperCase() || ''}
-                </span>
+                        ) : (
+                            <div className="w-48 h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center border-4 border-blue-300 shadow-xl">
+                                <span className="text-6xl font-light text-blue-700">
+                                    {getInitials()}
+                                </span>
                             </div>
                         )}
 

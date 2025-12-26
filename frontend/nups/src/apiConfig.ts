@@ -53,7 +53,10 @@ api.interceptors.response.use(
 
 // Helper to convert relative media URLs to absolute backend URLs
 export const toAbsoluteBackendUrl = (url: string): string => {
-    if (!url) return "";
+    // Return empty string immediately if url is falsy or empty
+    if (!url || typeof url !== 'string' || url.trim() === '') {
+        return "";
+    }
     
     // If already absolute (starts with http:// or https://), return as-is
     if (url.startsWith("http://") || url.startsWith("https://")) {
