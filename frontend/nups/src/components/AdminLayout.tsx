@@ -1,5 +1,5 @@
 import {NavLink, Outlet} from 'react-router-dom';
-import {ChevronLeft, ChevronRight, Home, Users} from 'lucide-react';
+import {ChevronLeft, ChevronRight, Home, Users, LogOut} from 'lucide-react';
 import {useAuth} from "../contexts/AuthContext.tsx";
 import {useState} from "react";
 
@@ -48,13 +48,10 @@ const AdminLayout = () => {
 
                 <button
                     onClick={logout}
-                    className="mt-auto p-3 text-blue-200 hover:bg-blue-600 rounded-lg"
+                    className="mt-auto p-3 text-blue-200 hover:bg-blue-600 rounded-lg transition-colors"
                     title="Logout"
                 >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                              d="M17 16l4-4m0 0l-4-4m4 4H7"/>
-                    </svg>
+                    <LogOut className="w-6 h-6"/>
                 </button>
             </aside>
 
