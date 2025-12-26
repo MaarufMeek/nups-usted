@@ -54,11 +54,82 @@ export interface StudentProfile {
 // ============================================
 
 /**
+ * Compress image file to reduce upload size (especially important for mobile)
+ */
+const compressImage = (file: File, maxWidth: number = 1920, quality: number = 0.8): Promise<File> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Calculate new dimensions
+                if (width > maxWidth) {
+                    height = (height * maxWidth) / width;
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error('Could not get canvas context'));
+                    return;
+                }
+
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob(
+                    (blob) => {
+                        if (!blob) {
+                            reject(new Error('Image compression failed'));
+                            return;
+                        }
+                        // Create a new File object with the compressed blob
+                        const compressedFile = new File([blob], file.name, {
+                            type: file.type,
+                            lastModified: Date.now(),
+                        });
+                        resolve(compressedFile);
+                    },
+                    file.type,
+                    quality
+                );
+            };
+            img.onerror = () => reject(new Error('Failed to load image'));
+            img.src = e.target?.result as string;
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+    });
+};
+
+/**
  * Submit a new student profile
  */
 export const submitStudentProfile = async (
     data: StudentProfile
 ): Promise<StudentProfile> => {
+    // Compress image if provided (reduces upload time, especially on mobile)
+    let imageFile = data.id_picture;
+    if (imageFile instanceof File) {
+        try {
+            // Only compress if file is larger than 500KB
+            if (imageFile.size > 500 * 1024) {
+                console.log(`Compressing image from ${(imageFile.size / 1024).toFixed(2)}KB...`);
+                imageFile = await compressImage(imageFile);
+                console.log(`Compressed to ${(imageFile.size / 1024).toFixed(2)}KB`);
+            }
+        } catch (error) {
+            console.warn('Image compression failed, using original:', error);
+            // Continue with original file if compression fails
+        }
+    }
+
     // Create FormData for file upload
     const formData = new FormData();
 
@@ -90,9 +161,9 @@ export const submitStudentProfile = async (
         formData.append("emergency_contact_data.phone", data.emergency_contact_data.phone || "");
     }
 
-    // Add image file (if provided)
-    if (data.id_picture instanceof File) {
-        formData.append("id_picture", data.id_picture);
+    // Add image file (if provided) - use compressed version if available
+    if (imageFile instanceof File) {
+        formData.append("id_picture", imageFile);
     }
 
     const response: AxiosResponse<StudentProfile> = await api.post(
@@ -101,6 +172,16 @@ export const submitStudentProfile = async (
         {
             headers: {
                 "Content-Type": "multipart/form-data",
+            },
+            timeout: 120000, // 120 seconds (2 minutes) for file uploads - especially important on mobile
+            // Enable upload progress tracking
+            onUploadProgress: (progressEvent) => {
+                if (progressEvent.total) {
+                    const percentCompleted = Math.round(
+                        (progressEvent.loaded * 100) / progressEvent.total
+                    );
+                    console.log(`Upload progress: ${percentCompleted}%`);
+                }
             },
         }
     );

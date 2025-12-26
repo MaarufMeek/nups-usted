@@ -6,7 +6,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const api = axios.create({
     baseURL: BASE_URL,
     headers: { "Content-Type": "application/json" },
-    timeout: 10000,
+    timeout: 60000, // 60 seconds - increased for file uploads on slow connections
 });
 
 // Request interceptor

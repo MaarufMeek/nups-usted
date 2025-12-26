@@ -35,12 +35,7 @@ const StudentForm = () => {
                 className="bg-blue-600 flex px-4 py-1 flex-col fixed w-full md:flex-row md:justify-between md:items-center items-center gap-3">
                 <img src={sitelogo} alt="nups-logo" className="h-auto"/>
                 <p className="text-[#FFDA04] font-bold text-xl">
-                    <span
-                        className="text-[#A61343]"
-                    >
-                        AAMUSTED
-                    </span>
-                    -Local
+                        AAMUSTED-Local
                 </p>
             </nav>
             <div className="min-h-screen pb-12 pt-2 px-4 bg-blue-50/30">
