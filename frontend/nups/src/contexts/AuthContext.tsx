@@ -1,4 +1,4 @@
-import {createContext, type ReactNode, useContext, useEffect, useState} from 'react';
+import {createContext, type ReactNode, useContext, useState} from 'react';
 import api from "../apiConfig.ts";
 
 type AuthContextType = {
