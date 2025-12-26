@@ -221,9 +221,11 @@ if USE_CLOUDINARY:
         'API_SECRET': get_env('CLOUDINARY_API_SECRET', ''),
     }
     
+    # Configure Cloudinary storage
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     MEDIA_URL = '/media/'
-    MEDIA_ROOT = None  # Not used when using Cloudinary
+    # MEDIA_ROOT can be None when using Cloudinary, but set a dummy path to avoid errors
+    MEDIA_ROOT = BASE_DIR / "media"  # Keep this for compatibility, Cloudinary will handle actual storage
 else:
     # Local filesystem storage for development
     MEDIA_URL = "/media/"
