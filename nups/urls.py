@@ -19,5 +19,7 @@ urlpatterns = [
 
 ]
 
-# Always serve media files (both in development and production)
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve media files from local filesystem (only when not using Cloudinary)
+# When using Cloudinary, files are served directly from Cloudinary CDN
+if settings.MEDIA_ROOT:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

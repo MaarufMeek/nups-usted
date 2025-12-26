@@ -51,4 +51,22 @@ api.interceptors.response.use(
     }
 );
 
+// Helper to convert relative media URLs to absolute backend URLs
+export const toAbsoluteBackendUrl = (url: string): string => {
+    if (!url) return "";
+    
+    // If already absolute (starts with http:// or https://), return as-is
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+        return url;
+    }
+    
+    // Extract backend origin from BASE_URL (remove /api if present)
+    const backendOrigin = BASE_URL?.replace(/\/api\/?$/, "") || "http://localhost:8000";
+    
+    // Ensure URL starts with /
+    const cleanUrl = url.startsWith("/") ? url : `/${url}`;
+    
+    return `${backendOrigin}${cleanUrl}`;
+};
+
 export default api;

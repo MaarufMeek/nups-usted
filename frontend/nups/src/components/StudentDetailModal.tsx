@@ -2,6 +2,7 @@
 import {useEffect, useState} from 'react';
 import {X} from 'lucide-react';
 import type {StudentProfile} from '../services/api.ts';
+import {toAbsoluteBackendUrl} from '../apiConfig.ts';
 
 interface StudentDetailModalProps {
     student: StudentProfile;
@@ -63,7 +64,7 @@ const StudentDetailModal = ({student, onClose}: StudentDetailModalProps) => {
                     <div className="md:col-span-1 flex flex-col items-center">
                         {student.id_picture ? (
                             <img
-                                src={student.id_picture as string}
+                                src={toAbsoluteBackendUrl(student.id_picture as string)}
                                 alt={`${student.first_name} ${student.last_name}`}
                                 className="w-48 h-48 object-cover rounded-full border-4 border-blue-200 shadow-xl"
                                 onError={(e) => {

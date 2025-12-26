@@ -52,6 +52,7 @@ ALLOWED_HOSTS = json.loads(
 # --------------------------------------------------
 # Installed Apps
 # --------------------------------------------------
+# Base installed apps (always needed)
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -66,6 +67,13 @@ INSTALLED_APPS = [
 
     "core.apps.CoreConfig",
 ]
+
+# Add Cloudinary apps only if Cloudinary is enabled
+# Check early to avoid import errors when USE_CLOUDINARY is False
+USE_CLOUDINARY = get_env("USE_CLOUDINARY", False, cast=bool)
+if USE_CLOUDINARY:
+    INSTALLED_APPS.insert(-1, "cloudinary_storage")  # Insert before core app
+    INSTALLED_APPS.insert(-1, "cloudinary")
 
 # --------------------------------------------------
 # Middleware
@@ -198,5 +206,25 @@ STATICFILES_DIRS = [
 ]
 
 
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+# Media files configuration
+# Use Cloudinary in production (Render), local filesystem in development
+# Note: USE_CLOUDINARY is already set above when configuring INSTALLED_APPS
+if USE_CLOUDINARY:
+    # Cloudinary storage for production (persistent, survives deployments)
+    import cloudinary
+    import cloudinary.uploader
+    import cloudinary.api
+    
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': get_env('CLOUDINARY_CLOUD_NAME', ''),
+        'API_KEY': get_env('CLOUDINARY_API_KEY', ''),
+        'API_SECRET': get_env('CLOUDINARY_API_SECRET', ''),
+    }
+    
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = None  # Not used when using Cloudinary
+else:
+    # Local filesystem storage for development
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = BASE_DIR / "media"
