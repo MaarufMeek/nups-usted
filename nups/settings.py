@@ -226,8 +226,8 @@ if USE_CLOUDINARY:
     MEDIA_ROOT = None  # Not used when using Cloudinary
 else:
     # Local filesystem storage for development
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = BASE_DIR / "media"
 
 # --------------------------------------------------
 # Logging
