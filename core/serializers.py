@@ -125,10 +125,18 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             if student.id_picture:
                 try:
                     image_url = student.id_picture.url
+                    storage_class = type(student.id_picture.storage).__name__
+                    storage_module = type(student.id_picture.storage).__module__
                     logger.info(f"Image URL after save and refresh: {image_url}")
                     logger.info(f"Image field name: {student.id_picture.name}")
                     logger.info(f"Image storage: {student.id_picture.storage}")
-                    logger.info(f"Image storage class: {type(student.id_picture.storage)}")
+                    logger.info(f"Image storage class: {storage_class} from {storage_module}")
+                    
+                    # Check if it's Cloudinary storage
+                    if 'cloudinary' in storage_module.lower():
+                        logger.info("✓ Using Cloudinary storage!")
+                    else:
+                        logger.warning(f"✗ NOT using Cloudinary storage! Using {storage_class}")
                 except Exception as e:
                     logger.error(f"Error getting image URL: {e}", exc_info=True)
             

@@ -27,6 +27,11 @@ def get_env(key, default=None, cast=None):
         value = default
 
     if cast and value is not None:
+        # Special handling for bool to properly convert string "true"/"false"
+        if cast == bool:
+            if isinstance(value, str):
+                return value.lower() in ('true', '1', 'yes', 'on')
+            return bool(value)
         return cast(value)
     return value
 
@@ -71,15 +76,16 @@ INSTALLED_APPS = [
 # Add Cloudinary apps only if Cloudinary is enabled
 # Check early to avoid import errors when USE_CLOUDINARY is False
 USE_CLOUDINARY = get_env("USE_CLOUDINARY", False, cast=bool)
-# Log the value to verify it's being read correctly
-import logging
-_logger = logging.getLogger(__name__)
-_logger.info(f"USE_CLOUDINARY from env: {USE_CLOUDINARY}")
+# Print to stdout (will show in logs even if logging not configured)
+print(f"[SETTINGS] USE_CLOUDINARY = {USE_CLOUDINARY} (type: {type(USE_CLOUDINARY)})")
+print(f"[SETTINGS] USE_CLOUDINARY env value: {os.environ.get('USE_CLOUDINARY', 'NOT SET')}")
 
 if USE_CLOUDINARY:
     INSTALLED_APPS.insert(-1, "cloudinary_storage")  # Insert before core app
     INSTALLED_APPS.insert(-1, "cloudinary")
-    _logger.info("Cloudinary apps added to INSTALLED_APPS")
+    print("[SETTINGS] Cloudinary apps added to INSTALLED_APPS")
+else:
+    print("[SETTINGS] Cloudinary NOT enabled - using local storage")
 
 # --------------------------------------------------
 # Middleware
@@ -243,6 +249,9 @@ if USE_CLOUDINARY:
     # MEDIA_ROOT can be None when using Cloudinary, but set a dummy path to avoid errors
     MEDIA_ROOT = BASE_DIR / "media"  # Keep this for compatibility, Cloudinary will handle actual storage
     
+    print(f"[SETTINGS] DEFAULT_FILE_STORAGE set to: {DEFAULT_FILE_STORAGE}")
+    print(f"[SETTINGS] DEFAULT_FILE_STORAGE class: {type(DEFAULT_FILE_STORAGE)}")
+    logger.info(f"Cloudinary enabled. Cloud name: {cloud_name}, API key set: {bool(api_key)}")
     logger.info(f"DEFAULT_FILE_STORAGE set to: {DEFAULT_FILE_STORAGE}")
 else:
     # Local filesystem storage for development
