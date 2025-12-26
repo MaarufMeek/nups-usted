@@ -15,6 +15,7 @@ const StudentDetailModal = ({student, onClose}: StudentDetailModalProps) => {
         setIsClosing(true);
     };
 
+    console.log("Student Data:", student);
     // Wait for exit animation to finish before calling onClose
     useEffect(() => {
         if (isClosing) {

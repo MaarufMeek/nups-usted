@@ -13,11 +13,11 @@ urlpatterns = [
     path('api/', include('core.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    re_path(r'^(?!api/).*$', TemplateView.as_view(template_name="index.html")),
+    re_path(r'^(?!api/|media/).*$', TemplateView.as_view(template_name="index.html")),
     path("create-superuser/", create_superuser_view),
     path('populate-initial-data/', populate_initial_data, name='populate-initial-data'),
 
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Always serve media files (both in development and production)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
