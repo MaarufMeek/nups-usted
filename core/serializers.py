@@ -1,5 +1,8 @@
+import logging
 from rest_framework import serializers
 from .models import StudentProfile, Program, Hall, Wing, EmergencyContact
+
+logger = logging.getLogger(__name__)
 
 class ProgramSerializer(serializers.ModelSerializer):
     class Meta:
@@ -65,23 +68,37 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ['program', 'hall', 'emergency_contact', 'wings']
 
     def create(self, validated_data):
-        # Extract nested data
-        emergency_contact_data = validated_data.pop('emergency_contact_data', None)
-        wings_data = validated_data.pop('wings', [])
-        
-        # Create the student profile instance
-        student = StudentProfile.objects.create(**validated_data)
-        
-        # Set ManyToMany relationships (wings)
-        if wings_data:
-            student.wings.set(wings_data)
-        
-        # Create emergency contact if provided
-        if emergency_contact_data:
-            EmergencyContact.objects.create(
-                student=student,
-                name=emergency_contact_data['name'],
-                phone=emergency_contact_data['phone']
-            )
-        
-        return student
+        try:
+            logger.info("Serializer create() called")
+            logger.info(f"Validated data keys: {list(validated_data.keys())}")
+            
+            # Extract nested data
+            emergency_contact_data = validated_data.pop('emergency_contact_data', None)
+            wings_data = validated_data.pop('wings', [])
+            
+            logger.info(f"Creating student profile for: {validated_data.get('first_name', 'Unknown')} {validated_data.get('last_name', 'Unknown')}")
+            
+            # Create the student profile instance
+            student = StudentProfile.objects.create(**validated_data)
+            logger.info(f"Student profile created with ID: {student.id}")
+            
+            # Set ManyToMany relationships (wings)
+            if wings_data:
+                logger.info(f"Setting wings: {[w.id for w in wings_data]}")
+                student.wings.set(wings_data)
+            
+            # Create emergency contact if provided
+            if emergency_contact_data:
+                logger.info("Creating emergency contact")
+                EmergencyContact.objects.create(
+                    student=student,
+                    name=emergency_contact_data['name'],
+                    phone=emergency_contact_data['phone']
+                )
+            
+            logger.info(f"Student profile creation completed successfully: {student.id}")
+            return student
+            
+        except Exception as e:
+            logger.error(f"Error in serializer create(): {str(e)}", exc_info=True)
+            raise

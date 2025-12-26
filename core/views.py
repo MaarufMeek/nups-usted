@@ -1,10 +1,14 @@
-from rest_framework import viewsets
+    import logging
+from rest_framework import viewsets, status
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 
 from .models import Program, Hall, StudentProfile, Wing
 from .serializers import ProgramSerializer, HallSerializer, StudentProfileSerializer, WingSerializer
+
+logger = logging.getLogger(__name__)
 
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
@@ -47,11 +51,40 @@ class StudentViewSet(CreateModelMixin, ListModelMixin, RetrieveModelMixin, Gener
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
 
+    def create(self, request, *args, **kwargs):
+        """Override create to add detailed error logging"""
+        try:
+            logger.info(f"Creating student profile. Data keys: {list(request.data.keys())}")
+            logger.info(f"Has file: {'id_picture' in request.FILES}")
+            
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            
+            logger.info("Serializer is valid, saving...")
+            self.perform_create(serializer)
+            
+            headers = self.get_success_headers(serializer.data)
+            logger.info(f"Student profile created successfully: {serializer.data.get('id')}")
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            
+        except Exception as e:
+            logger.error(f"Error creating student profile: {str(e)}", exc_info=True)
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            return Response(
+                {'error': str(e), 'detail': 'Failed to create student profile'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
     def perform_create(self, serializer):
         # save member profile
-        student = serializer.save()
-        print("Saved")  # debug line
-        # Email sending removed for now
+        try:
+            logger.info("Saving student profile...")
+            student = serializer.save()
+            logger.info(f"Student profile saved successfully. ID: {student.id}, Email: {student.email}")
+        except Exception as e:
+            logger.error(f"Error in perform_create: {str(e)}", exc_info=True)
+            raise  # Re-raise to be caught by create() method
 
 
 
