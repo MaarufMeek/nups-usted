@@ -5,15 +5,15 @@ from django.urls import path, include
 from django.http import JsonResponse
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from core.views import create_superuser_view, populate_initial_data
+# from core.views import create_superuser_view, populate_initial_data
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('core.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path("create-superuser/", create_superuser_view),
-    path('populate-initial-data/', populate_initial_data, name='populate-initial-data'),
+    # path("create-superuser/", create_superuser_view),
+    # path('populate-initial-data/', populate_initial_data, name='populate-initial-data'),
     # Root URL - return simple API info (frontend is served separately on Render)
     path('', lambda request: JsonResponse({'message': 'NUPS API', 'endpoints': {'admin': '/admin/', 'api': '/api/'}}), name='root'),
 ]

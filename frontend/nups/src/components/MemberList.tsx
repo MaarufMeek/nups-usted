@@ -1,41 +1,28 @@
 // src/components/admin/MembersList.tsx
-import {useEffect, useState} from 'react';
+import {useMemo, useState} from 'react';
 import type {StudentProfile} from '../services/api.ts';
-import {getAllStudents} from '../services/api.ts';
+import {useStudents} from '../hooks/useStudents.ts';
 import {Download, Eye} from 'lucide-react';
 import StudentDetailModal from './StudentDetailModal.tsx';
 import {jsPDF} from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 const MembersList = () => {
-    const [studentsData, setStudentsData] = useState<StudentProfile[]>([]);
-    const [loading, setLoading] = useState(true);
+    const {data: studentsData = [], isLoading: loading} = useStudents();
     const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
     const [genderFilter, setGenderFilter] = useState<string>("")
     const [hallFilter, setHallFilter] = useState<string>("")
     const [programFilter, setProgramFilter] = useState<string>("")
 
-    useEffect(() => {
-        getAllStudents()
-            .then(setStudentsData)
-            .finally(() => setLoading(false));
-    }, []);
-
-    const filteredStudents = studentsData.filter((student) => {
-        const genderMatch =
-            !genderFilter || student.gender === genderFilter
-
-        const hallMatch =
-            !hallFilter || student.hall?.name === hallFilter
-
-        const programMatch =
-            !programFilter || student.program?.name === programFilter
-
-        return genderMatch && hallMatch && programMatch
-    })
-
-
-    const students = filteredStudents;
+    // Memoize filtered students for performance
+    const students = useMemo(() => {
+        return studentsData.filter((student) => {
+            const genderMatch = !genderFilter || student.gender === genderFilter;
+            const hallMatch = !hallFilter || student.hall?.name === hallFilter;
+            const programMatch = !programFilter || student.program?.name === programFilter;
+            return genderMatch && hallMatch && programMatch;
+        });
+    }, [studentsData, genderFilter, hallFilter, programFilter]);
 
 
     const exportToPDF = () => {

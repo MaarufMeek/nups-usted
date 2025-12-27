@@ -1,40 +1,35 @@
 // src/components/admin/DashboardHome.tsx
-import {useEffect, useState} from 'react';
-import {getAllStudents} from '../services/api.ts';
+import {useMemo} from 'react';
+import {useStudents} from '../hooks/useStudents.ts';
 
 const DashboardHome = () => {
-    const [totalMembers, setTotalMembers] = useState(0);
-    const [todaySubmissions, setTodaySubmissions] = useState(0);
-    const [maleCount, setMaleCount] = useState(0);
-    const [femaleCount, setFemaleCount] = useState(0);
-    const [loading, setLoading] = useState(true);
+    const {data: students = [], isLoading: loading} = useStudents();
 
-    console.log("Students: ", getAllStudents())
+    // Calculate statistics using useMemo for performance
+    const stats = useMemo(() => {
+        const totalMembers = students.length;
 
-    useEffect(() => {
-        getAllStudents()
-            .then((students) => {
-                setTotalMembers(students.length);
+        // Today's date in YYYY-MM-DD format
+        const today = new Date().toISOString().split('T')[0];
 
-                // Today's date in YYYY-MM-DD format
-                const today = new Date().toISOString().split('T')[0];
+        // Count today's submissions
+        const todaySubmissions = students.filter((s) =>
+            s.created_at?.startsWith(today)
+        ).length;
 
-                // Count today's submissions
-                const todayCount = students.filter((s) =>
-                    s.created_at?.startsWith(today)
-                ).length;
-                setTodaySubmissions(todayCount);
+        // Gender counts
+        const maleCount = students.filter((s) => s.gender === 'Male').length;
+        const femaleCount = students.filter((s) => s.gender === 'Female').length;
 
-                // Gender counts
-                const males = students.filter((s) => s.gender === 'Male').length;
-                const females = students.filter((s) => s.gender === 'Female').length;
-                setMaleCount(males);
-                setFemaleCount(females);
+        return {
+            totalMembers,
+            todaySubmissions,
+            maleCount,
+            femaleCount,
+        };
+    }, [students]);
 
-                setLoading(false);
-            })
-            .catch(() => setLoading(false));
-    }, []);
+    const {totalMembers, todaySubmissions, maleCount, femaleCount} = stats;
 
     return (
         <div>
