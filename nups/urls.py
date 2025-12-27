@@ -14,8 +14,22 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # path("create-superuser/", create_superuser_view),
     # path('populate-initial-data/', populate_initial_data, name='populate-initial-data'),
+    # Health check endpoint for keeping service awake (ping this every 10-14 minutes)
+    path('health/', lambda request: JsonResponse({
+        'status': 'healthy',
+        'service': 'NUPS API',
+        'timestamp': __import__('datetime').datetime.now().isoformat(),
+        'message': 'Service is running'
+    }), name='health'),
     # Root URL - return simple API info (frontend is served separately on Render)
-    path('', lambda request: JsonResponse({'message': 'NUPS API', 'endpoints': {'admin': '/admin/', 'api': '/api/'}}), name='root'),
+    path('', lambda request: JsonResponse({
+        'message': 'NUPS API',
+        'endpoints': {
+            'admin': '/admin/',
+            'api': '/api/',
+            'health': '/health/'
+        }
+    }), name='root'),
 ]
 
 # Serve media files from local filesystem (only when not using Cloudinary)

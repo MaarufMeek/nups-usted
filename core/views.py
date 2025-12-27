@@ -11,12 +11,13 @@ from .serializers import ProgramSerializer, HallSerializer, StudentProfileSerial
 logger = logging.getLogger(__name__)
 
 from django.contrib.auth import get_user_model
-from django.http import HttpResponse
-
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 from .models import Program, Wing
+from django.utils import timezone
+from datetime import datetime
 
 
 class ProgramViewSet(viewsets.ModelViewSet):
@@ -181,6 +182,22 @@ class WingViewSet(viewsets.ModelViewSet):
 #         "wings_created": created_wings,
 #         "message": "Initial data population complete."
 #     })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health_check(request):
+    """
+    Health check endpoint to keep Render service awake.
+    Can be pinged by external services (UptimeRobot, cron-job.org, etc.)
+    every 10-14 minutes to prevent the service from sleeping.
+    """
+    return Response({
+        'status': 'healthy',
+        'service': 'NUPS API',
+        'timestamp': timezone.now().isoformat(),
+        'message': 'Service is running'
+    }, status=200)
 
 
 
