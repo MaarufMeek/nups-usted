@@ -99,10 +99,6 @@ const AdminLogin = () => {
                         )}
                     </button>
                 </form>
-
-                <p className="text-center text-sm text-gray-500 mt-6">
-                    Use your Django superuser credentials
-                </p>
             </div>
         </div>
     );
