@@ -32,26 +32,21 @@ const AdminLayout = () => {
                         key={item.to}
                         to={item.to}
                         onClick={() => setIsOpen(false)}
-                        className={({isActive}) =>
-                            `p-3 rounded-lg transition-colors ${
-                                isActive
-                                    ? "bg-blue-800 text-white"
-                                    : "text-blue-200 hover:bg-blue-600"
-                            }`
-                        }
+                        className="p-1 text-blue-200 hover:bg-blue-600 rounded-lg transition-colors flex flex-col items-center"
                         title={item.label}
                     >
-                        <item.icon className="w-6 h-6"/>
+                        <item.icon className="w-6 h-6 text-yellow-300"/>
+                        <span className="text-[10px] mt-1">{item.label}</span>
                     </NavLink>
-
                 ))}
 
                 <button
                     onClick={logout}
-                    className="mt-auto p-3 text-blue-200 hover:bg-blue-600 rounded-lg transition-colors"
+                    className="mt-auto p-1 text-blue-200 hover:bg-blue-600 rounded-lg transition-colors flex flex-col items-center"
                     title="Logout"
                 >
-                    <LogOut className="w-6 h-6"/>
+                    <LogOut className="w-6 h-6 text-yellow-300"/>
+                    Logout
                 </button>
             </aside>
 

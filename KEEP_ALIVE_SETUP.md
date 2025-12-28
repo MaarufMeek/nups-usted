@@ -27,16 +27,27 @@ Choose one of these free services to ping your endpoint:
 
 ### Option 1: UptimeRobot (Recommended - Free, Reliable)
 
+**Free Plan Limits:**
+- **50 monitors** = You can monitor up to 50 different URLs/endpoints (you only need 1!)
+- **5-minute interval** = Checks your endpoint every 5 minutes (perfect for keeping Render awake)
+- **Free forever** = No credit card required
+
 1. **Sign up**: Go to https://uptimerobot.com/ (free account)
 2. **Add Monitor**:
    - Click "Add New Monitor"
    - **Monitor Type**: HTTP(s)
    - **Friendly Name**: NUPS API Keep Alive
    - **URL**: `https://nupsapi.onrender.com/health/`
-   - **Monitoring Interval**: 5 minutes (free tier allows this)
+   - **Monitoring Interval**: 5 minutes (this is the minimum on free tier)
    - Click "Create Monitor"
 
 3. **Done!** UptimeRobot will ping your endpoint every 5 minutes, keeping your service awake.
+
+**Why 5 minutes is perfect:**
+- Render sleeps after **15 minutes** of inactivity
+- UptimeRobot pings every **5 minutes**
+- This means your service will **never** be inactive long enough to sleep!
+- You'll use only **1 out of 50 monitors** (plenty left for other projects)
 
 ### Option 2: cron-job.org (Free)
 

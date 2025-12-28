@@ -13,6 +13,7 @@ const MembersList = () => {
     const [genderFilter, setGenderFilter] = useState<string>("")
     const [hallFilter, setHallFilter] = useState<string>("")
     const [programFilter, setProgramFilter] = useState<string>("")
+    const [wingFilter, setWingFilter] = useState("")
 
     // Memoize filtered students for performance
     const students = useMemo(() => {
@@ -20,10 +21,47 @@ const MembersList = () => {
             const genderMatch = !genderFilter || student.gender === genderFilter;
             const hallMatch = !hallFilter || student.hall?.name === hallFilter;
             const programMatch = !programFilter || student.program?.name === programFilter;
-            return genderMatch && hallMatch && programMatch;
-        });
-    }, [studentsData, genderFilter, hallFilter, programFilter]);
+            // Wing filter: check if student belongs to the selected wing (students can have multiple wings)
+            const wingMatch = !wingFilter || (student.wings && student.wings.some(wing => wing.name === wingFilter));
 
+            return genderMatch && hallMatch && programMatch && wingMatch;
+        });
+    }, [studentsData, genderFilter, hallFilter, programFilter, wingFilter]);
+
+    // Generate dynamic PDF title based on active filters
+    const getPDFTitle = () => {
+        // If no filters, return default title
+        if (!genderFilter && !wingFilter && !hallFilter && !programFilter) {
+            return 'All Registered Members';
+        }
+
+        // Build title parts in order: Gender, Wing, Hall, Program
+        let title = 'All';
+        
+        // Add gender if filtered
+        if (genderFilter) {
+            title += ` ${genderFilter}`;
+        }
+        
+        title += ' Members';
+        
+        // Add wing if filtered
+        if (wingFilter) {
+            title += ` in ${wingFilter}`;
+        }
+        
+        // Add hall if filtered
+        if (hallFilter) {
+            title += ` from ${hallFilter}`;
+        }
+        
+        // Add program if filtered (use "studying" to avoid confusion with "in" for wings)
+        if (programFilter) {
+            title += ` studying ${programFilter}`;
+        }
+        
+        return title;
+    };
 
     const exportToPDF = () => {
         const doc = new jsPDF({
@@ -32,18 +70,35 @@ const MembersList = () => {
             format: 'a4',
         });
 
-        // Title
-        doc.setFontSize(20);
-        doc.text('All Registered Members - Full Details', 14, 20);
+        // Dynamic Title based on filters
+        const pdfTitle = getPDFTitle();
+        doc.setFontSize(18);
+        
+        // Calculate page width A4 portrait
+        const pageWidth = 210;
+        const margin = 14;
+        const maxWidth = pageWidth - (margin * 2);
+        
+        // Split title into multiple lines if it's too long
+        const titleLines = doc.splitTextToSize(pdfTitle, maxWidth);
+        
+        // Draw title with wrapping
+        let currentY = 20;
+        titleLines.forEach((line: string) => {
+            doc.text(line, margin, currentY);
+            currentY += 6; // Line height
+        });
 
-        // Subtitle
+        // Subtitle - adjust position based on title height
         doc.setFontSize(12);
-        doc.text(`Total Members: ${students.length}`, 14, 30);
+        currentY += 3; // Add some spacing after title
+        doc.text(`Total Members: ${students.length}`, margin, currentY);
+        currentY += 6;
         doc.text(`Generated on: ${new Date().toLocaleDateString('en-GB', {
             day: 'numeric',
             month: 'long',
             year: 'numeric'
-        })}`, 14, 37);
+        })}`, margin, currentY);
 
         const tableColumns = [
             'Name',
@@ -66,11 +121,14 @@ const MembersList = () => {
 
         ]);
 
-        // Use the imported autoTable function
+
+        // Adjust startY based on title height (add extra space for wrapped titles)
+        const tableStartY = currentY + 8; // Add spacing after subtitle
+        
         autoTable(doc, {
             head: [tableColumns],
             body: tableRows,
-            startY: 45,
+            startY: tableStartY,
             theme: 'grid',
             styles: {fontSize: 8, cellPadding: 3, overflow: 'linebreak', valign: 'middle'},
             headStyles: {fillColor: [30, 64, 175], textColor: 255, fontStyle: 'bold', halign: 'center'},
@@ -86,53 +144,80 @@ const MembersList = () => {
             rowPageBreak: 'avoid',
         });
 
-        doc.save(`full-members-list-${new Date().toISOString().split('T')[0]}.pdf`);
+        // Generate filename based on active filters
+        const getFileName = () => {
+            const parts: string[] = [];
+            if (genderFilter) parts.push(genderFilter.toLowerCase());
+            if (wingFilter) parts.push(wingFilter.toLowerCase().replace(/\s+/g, '-'));
+            if (hallFilter) parts.push(hallFilter.toLowerCase().replace(/\s+/g, '-'));
+            if (programFilter) parts.push(programFilter.toLowerCase().substring(0, 20).replace(/\s+/g, '-'));
+            
+            const filterSuffix = parts.length > 0 ? `-${parts.join('-')}` : '';
+            return `members-list${filterSuffix}-${new Date().toISOString().split('T')[0]}.pdf`;
+        };
+
+        doc.save(getFileName());
     };
     if (loading) return <p className="text-center py-10">Loading members...</p>;
 
     return (
         <div>
             <div className="mt-8 mb-6">
-                    <div className="flex flex-row sm:flex-row sm:flex-wrap gap-3">
-                        <select
-                            value={genderFilter}
-                            onChange={(e) => setGenderFilter(e.target.value)}
-                            className="w-full sm:w-auto border border-blue-200 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        >
-                            <option value="">All Genders</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                        </select>
+                <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3">
+                    <select
+                        value={genderFilter}
+                        onChange={(e) => setGenderFilter(e.target.value)}
+                        className="w-full sm:w-auto border border-blue-200 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    >
+                        <option value="">All Genders</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
 
-                        <select
-                            value={programFilter}
-                            onChange={(e) => setProgramFilter(e.target.value)}
-                            className="w-full sm:w-auto border border-blue-200 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        >
-                            <option value="">All Programs</option>
-                            {[...new Set(studentsData.map(s => s.program?.name).filter(Boolean))].map(
-                                (program) => (
-                                    <option key={program} value={program}>
-                                        {program}
-                                    </option>
-                                )
-                            )}
-                        </select>
+                    <select
+                        value={programFilter}
+                        onChange={(e) => setProgramFilter(e.target.value)}
+                        className="w-full sm:w-auto border border-blue-200 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    >
+                        <option value="">All Programs</option>
+                        {[...new Set(studentsData.map(s => s.program?.name).filter(Boolean))].map(
+                            (program) => (
+                                <option key={program} value={program}>
+                                    {program}
+                                </option>
+                            )
+                        )}
+                    </select>
 
-                        <select
-                            value={hallFilter}
-                            onChange={(e) => setHallFilter(e.target.value)}
-                            className="w-full sm:w-auto border border-blue-200 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        >
-                            <option value="">All Halls</option>
-                            {[...new Set(studentsData.map(s => s.hall?.name).filter(Boolean))].map(
-                                (hall) => (
-                                    <option key={hall} value={hall}>
-                                        {hall}
-                                    </option>
-                                )
-                            )}
-                        </select>
+                    <select
+                        value={hallFilter}
+                        onChange={(e) => setHallFilter(e.target.value)}
+                        className="w-full sm:w-auto border border-blue-200 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    >
+                        <option value="">All Halls</option>
+                        {[...new Set(studentsData.map(s => s.hall?.name).filter(Boolean))].map(
+                            (hall) => (
+                                <option key={hall} value={hall}>
+                                    {hall}
+                                </option>
+                            )
+                        )}
+                    </select>
+
+                    <select
+                        value={wingFilter}
+                        onChange={(e) => setWingFilter(e.target.value)}
+                        className="w-full sm:w-auto border border-blue-200 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    >
+                        <option value="">All Wings</option>
+                        {[...new Set(studentsData.flatMap(s => s.wings?.map(w => w.name) || []).filter(Boolean))].map(
+                            (wing) => (
+                                <option key={wing} value={wing}>
+                                    {wing}
+                                </option>
+                            )
+                        )}
+                    </select>
                 </div>
             </div>
 

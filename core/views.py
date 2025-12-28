@@ -189,8 +189,8 @@ class WingViewSet(viewsets.ModelViewSet):
 def health_check(request):
     """
     Health check endpoint to keep Render service awake.
-    Can be pinged by external services (UptimeRobot, cron-job.org, etc.)
-    every 10-14 minutes to prevent the service from sleeping.
+    To be pinged by external service UptimeRobot
+    every 5 minutes to prevent the service from sleeping.
     """
     return Response({
         'status': 'healthy',
