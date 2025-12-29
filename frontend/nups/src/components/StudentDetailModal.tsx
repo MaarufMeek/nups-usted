@@ -107,15 +107,15 @@ const StudentDetailModal = ({student, onClose}: StudentDetailModalProps) => {
                             <h4 className="text-lg font-semibold text-blue-700 mb-4">Personal Information</h4>
                             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <dt className="font-medium text-gray-600">Gender</dt>
+                                    <dt className="font-medium text-black">Gender</dt>
                                     <dd className="mt-1">{student.gender || '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="font-medium text-gray-600">Marital Status</dt>
+                                    <dt className="font-medium text-black">Marital Status</dt>
                                     <dd className="mt-1">{student.marital_status || '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="font-medium text-gray-600">Date of Birth</dt>
+                                    <dt className="font-medium text-black">Date of Birth</dt>
                                     <dd className="mt-1">
                                         {student.date_of_birth
                                             ? new Date(student.date_of_birth).toLocaleDateString('en-GB', {
@@ -127,8 +127,12 @@ const StudentDetailModal = ({student, onClose}: StudentDetailModalProps) => {
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="font-medium text-gray-600">Contact Number</dt>
+                                    <dt className="font-medium text-black">Contact Number</dt>
                                     <dd className="mt-1">{student.contact || '—'}</dd>
+                                </div>
+                                <div>
+                                    <dt className="font-medium text-black">Place of Residence</dt>
+                                    <dd className="mt-1">{student.place_of_residence || '—'}</dd>
                                 </div>
                             </dl>
                         </section>
@@ -138,11 +142,11 @@ const StudentDetailModal = ({student, onClose}: StudentDetailModalProps) => {
                             <h4 className="text-lg font-semibold text-blue-700 mb-4">Academic Information</h4>
                             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <dt className="font-medium text-gray-600">Program of Study</dt>
+                                    <dt className="font-medium text-black">Program of Study</dt>
                                     <dd className="mt-1">{student.program?.name || '—'}</dd>
                                 </div>
                                 <div>
-                                    <dt className="font-medium text-gray-600">Hall of Affiliation</dt>
+                                    <dt className="font-medium text-black">Hall of Affiliation</dt>
                                     <dd className="mt-1">{student.hall?.name || '—'}</dd>
                                 </div>
                             </dl>
@@ -171,25 +175,17 @@ const StudentDetailModal = ({student, onClose}: StudentDetailModalProps) => {
                             {student.emergency_contact ? (
                                 <dl className="text-sm space-y-2 flex flex-row gap-16">
                                     <div>
-                                        <dt className="font-medium text-gray-600">Name</dt>
+                                        <dt className="font-medium text-black">Name</dt>
                                         <dd className="mt-1">{student.emergency_contact.name}</dd>
                                     </div>
                                     <div>
-                                        <dt className="font-medium text-gray-600">Phone</dt>
+                                        <dt className="font-medium text-black">Phone</dt>
                                         <dd className="mt-1">{student.emergency_contact.phone}</dd>
                                     </div>
                                 </dl>
                             ) : (
                                 <p className="text-sm text-gray-500 italic">No emergency contact provided</p>
                             )}
-                        </section>
-
-                        {/* Residence */}
-                        <section>
-                            <h4 className="text-lg font-semibold text-blue-700 mb-4">Place of Residence</h4>
-                            <p className="text-sm text-gray-700">
-                                {student.place_of_residence || '—'}
-                            </p>
                         </section>
 
                         {/* Joined Date */}

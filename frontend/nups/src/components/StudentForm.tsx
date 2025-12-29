@@ -36,7 +36,7 @@ const StudentForm = () => {
                 className="bg-blue-600 flex px-4 py-1 flex-col fixed w-full md:flex-row md:justify-between md:items-center items-center gap-3">
                 <img src={sitelogo} alt="nups-logo" className="h-auto"/>
                 <p className="text-[#FFDA04] font-bold text-xl">
-                        AAMUSTED-Local
+                        AAMUSTED-K-Local
                 </p>
             </nav>
             <div className="min-h-screen pb-12 pt-2 px-4 bg-blue-50/30">
@@ -272,25 +272,87 @@ const StudentForm = () => {
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Place of Residence <span className="text-red-500">*</span>
                                     </label>
-                                    <select
-                                        name="place_of_residence"
-                                        value={formData.place_of_residence}
-                                        onChange={handleChange}
-                                        required
-                                        className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out ${
-                                            validationErrors.place_of_residence
-                                                ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
-                                                : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
-                                        }`}
-                                    >
-                                        <option value="">Select Place of Residence</option>
-                                        {halls.map((hall) => (
-                                            <option key={hall.id} value={hall.name}>
-                                                {hall.name}
-                                            </option>
-                                        ))}
-                                        <option value="Outside Campus">Outside Campus</option>
-                                    </select>
+                                    {(() => {
+                                        const isHallSelected = halls.some(hall => hall.name === formData.place_of_residence);
+                                        const showCustomInput = formData.place_of_residence && !isHallSelected && formData.place_of_residence !== "";
+                                        const dropdownValue = showCustomInput ? "Outside Campus" : (formData.place_of_residence || "");
+                                        
+                                        return (
+                                            <>
+                                                <select
+                                                    name="place_of_residence"
+                                                    value={dropdownValue}
+                                                    onChange={(e) => {
+                                                        const selectedValue = e.target.value;
+                                                        if (selectedValue === "Outside Campus") {
+                                                            // Initialize with "Outside Campus" to show the input field
+                                                            handleChange({
+                                                                target: { name: "place_of_residence", value: "Outside Campus" }
+                                                            } as ChangeEvent<HTMLSelectElement>);
+                                                        } else if (selectedValue !== "") {
+                                                            // Set to the selected hall name
+                                                            handleChange(e);
+                                                        } else {
+                                                            // Clear selection
+                                                            handleChange(e);
+                                                        }
+                                                    }}
+                                                    required
+                                                    className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out ${
+                                                        validationErrors.place_of_residence
+                                                            ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
+                                                            : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
+                                                    }`}
+                                                >
+                                                    <option value="">Select Place of Residence</option>
+                                                    {halls.map((hall) => (
+                                                        <option key={hall.id} value={hall.name}>
+                                                            {hall.name}
+                                                        </option>
+                                                    ))}
+                                                    <option value="Outside Campus">Outside Campus</option>
+                                                </select>
+                                                {isHallSelected && (
+                                                    <p className="text-xs text-blue-600 mt-1 mb-2">
+                                                        ✓ You have selected: <strong>{formData.place_of_residence}</strong>
+                                                    </p>
+                                                )}
+                                                {!isHallSelected && formData.place_of_residence === "" && (
+                                                    <p className="text-xs text-gray-500 mt-1 mb-2">
+                                                        Select your hall of residence from the list above, or choose "Outside Campus" if you live off-campus
+                                                    </p>
+                                                )}
+                                                {showCustomInput && (
+                                                    <div className="mt-2">
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Specify Your Place of Residence <span className="text-red-500">*</span>
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            name="custom_residence"
+                                                            value={formData.place_of_residence === "Outside Campus" ? "" : formData.place_of_residence}
+                                                            onChange={(e) => {
+                                                                const customValue = e.target.value.trim();
+                                                                handleChange({
+                                                                    target: { name: "place_of_residence", value: customValue || "Outside Campus" }
+                                                                } as ChangeEvent<HTMLInputElement>);
+                                                            }}
+                                                            required
+                                                            placeholder="e.g., Tanoso, Apatrapa, IPT, etc."
+                                                            className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out placeholder:text-gray-400 ${
+                                                                validationErrors.place_of_residence
+                                                                    ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
+                                                                    : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
+                                                            }`}
+                                                        />
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            Enter the name of the city, town, or area where you currently reside
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
                                     {validationErrors.place_of_residence && (
                                         <p className="text-red-600 text-xs mt-1">
                                             {validationErrors.place_of_residence[0]}
