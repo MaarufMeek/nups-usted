@@ -36,7 +36,8 @@ export interface StudentProfile {
     contact: string;
     email: string;
     place_of_residence: string;
-    program_id: number;
+    program_id?: number; // Optional when custom_program_name is provided
+    custom_program_name?: string; // Used when "Other" is selected
     hall_id: number;
     wing_ids?: number[];
     emergency_contact_data?: EmergencyContact;
@@ -145,7 +146,13 @@ export const submitStudentProfile = async (
     formData.append("contact", data.contact);
     formData.append("email", data.email);
     formData.append("place_of_residence", data.place_of_residence);
-    formData.append("program_id", data.program_id.toString());
+    // Handle program: if custom_program_name is provided, send it; otherwise send program_id
+    if (data.custom_program_name && data.custom_program_name.trim()) {
+        formData.append("custom_program_name", data.custom_program_name.trim());
+        // Don't send program_id when using custom program
+    } else if (data.program_id) {
+        formData.append("program_id", data.program_id.toString());
+    }
     formData.append("hall_id", data.hall_id.toString());
 
     // Add wings (if provided)

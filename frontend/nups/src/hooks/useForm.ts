@@ -24,6 +24,7 @@ export const useStudentForm = () => {
         email: "",
         place_of_residence: "",
         program_id: 0,
+        custom_program_name: "",
         hall_id: 0,
         wing_ids: [],
         emergency_contact_data: {
@@ -234,7 +235,8 @@ export const useStudentForm = () => {
                     contact: formData.contact!,
                     email: formData.email!,
                     place_of_residence: formData.place_of_residence!,
-                    program_id: formData.program_id!,
+                    program_id: formData.custom_program_name ? undefined : formData.program_id!,
+                    custom_program_name: formData.custom_program_name || undefined,
                     hall_id: formData.hall_id!,
                     wing_ids: formData.wing_ids || [],
                     emergency_contact_data: formData.emergency_contact_data,
@@ -260,6 +262,7 @@ export const useStudentForm = () => {
                     email: "",
                     place_of_residence: "",
                     program_id: 0,
+                    custom_program_name: "",
                     hall_id: 0,
                     wing_ids: [],
                     emergency_contact_data: {
@@ -344,6 +347,7 @@ export const useStudentForm = () => {
             email: "",
             place_of_residence: "",
             program_id: 0,
+            custom_program_name: "",
             hall_id: 0,
             wing_ids: [],
             emergency_contact_data: {

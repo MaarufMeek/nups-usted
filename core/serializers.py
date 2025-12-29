@@ -34,7 +34,16 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     program_id = serializers.PrimaryKeyRelatedField(
         queryset=Program.objects.all(),
         source='program',
-        write_only=True
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+    # Accept custom program name when "Other" is selected
+    custom_program_name = serializers.CharField(
+        write_only=True,
+        required=False,
+        allow_blank=True,
+        help_text="Enter the program name exactly as it appears on your admission letter"
     )
     hall_id = serializers.PrimaryKeyRelatedField(
         queryset=Hall.objects.all(),
@@ -59,6 +68,23 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     
     # Custom ImageField that ensures full URL is returned
     id_picture = serializers.ImageField(required=False, allow_null=True)
+    
+    def validate(self, data):
+        """Custom validation to ensure either program_id or custom_program_name is provided"""
+        program = data.get('program')
+        custom_program_name = data.get('custom_program_name', '').strip() if data.get('custom_program_name') else ''
+        
+        # If custom_program_name is provided, we'll use it (program will be created in create method)
+        if custom_program_name:
+            return data
+        
+        # If no custom_program_name, program_id must be provided
+        if not program:
+            raise serializers.ValidationError({
+                'program_id': 'Either select a program or provide a custom program name.'
+            })
+        
+        return data
     
     def to_representation(self, instance):
         """Override to ensure id_picture returns full URL"""
@@ -98,7 +124,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'first_name', 'last_name', 'other_name', 'date_of_birth',
             'gender', 'marital_status', 'contact', 'email', 'emergency_contact', 'emergency_contact_data',
-            'program', 'program_id', 'hall', 'hall_id',
+            'program', 'program_id', 'custom_program_name', 'hall', 'hall_id',
             'place_of_residence', 'wings', 'wing_ids', 'id_picture', 'created_at'
         ]
         read_only_fields = ['program', 'hall', 'emergency_contact', 'wings']
@@ -111,6 +137,32 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             # Extract nested data
             emergency_contact_data = validated_data.pop('emergency_contact_data', None)
             wings_data = validated_data.pop('wings', [])
+            custom_program_name = validated_data.pop('custom_program_name', None)
+            
+            # Handle custom program name - create or get Program if custom_program_name is provided
+            if custom_program_name and custom_program_name.strip():
+                program_name = custom_program_name.strip()
+                # Check if program exists (case-insensitive) to avoid duplicates
+                try:
+                    # Try to find existing program (case-insensitive)
+                    program = Program.objects.get(name__iexact=program_name)
+                    created = False
+                    logger.info(f"Found existing program: {program.name} (ID: {program.id})")
+                except Program.DoesNotExist:
+                    # Create new program if it doesn't exist
+                    program = Program.objects.create(name=program_name)
+                    created = True
+                    logger.info(f"Created new program: {program.name} (ID: {program.id})")
+                except Program.MultipleObjectsReturned:
+                    # If multiple found (shouldn't happen with unique constraint), get first
+                    program = Program.objects.filter(name__iexact=program_name).first()
+                    created = False
+                    logger.warning(f"Multiple programs found for '{program_name}', using first: {program.name} (ID: {program.id})")
+                
+                validated_data['program'] = program
+            elif not validated_data.get('program'):
+                # If no program_id and no custom_program_name, validation should catch this
+                validated_data['program'] = None
             
             logger.info(f"Creating student profile for: {validated_data.get('first_name', 'Unknown')} {validated_data.get('last_name', 'Unknown')}")
             

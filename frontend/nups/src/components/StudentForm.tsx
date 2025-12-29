@@ -6,6 +6,7 @@ import {useStudentForm} from "../hooks/useForm.ts";
 const StudentForm = () => {
     const {
         formData,
+        setFormData,
         programs,
         halls,
         wings,
@@ -376,29 +377,91 @@ const StudentForm = () => {
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Program of Study <span className="text-red-500">*</span>
                                     </label>
-                                    <select
-                                        name="program_id"
-                                        value={formData.program_id}
-                                        onChange={handleChange}
-                                        required
-                                        className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out ${
-                                            validationErrors.program_id
-                                                ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
-                                                : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
-                                        }`}
-                                    >
-                                        <option value={0}>Select Program</option>
-                                        {programs.map((program) => (
-                                            <option key={program.id} value={program.id}>
-                                                {program.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {validationErrors.program_id && (
-                                        <p className="text-red-600 text-xs mt-1">
-                                            {validationErrors.program_id[0]}
-                                        </p>
-                                    )}
+                                    {(() => {
+                                        const isOtherSelected = formData.program_id === -1;
+                                        const hasCustomProgram = formData.custom_program_name && formData.custom_program_name.trim() !== "";
+                                        
+                                        return (
+                                            <>
+                                                <select
+                                                    name="program_id"
+                                                    value={hasCustomProgram ? -1 : (formData.program_id || 0)}
+                                                    onChange={(e) => {
+                                                        const selectedValue = Number(e.target.value);
+                                                        if (selectedValue === -1) {
+                                                            // "Other" selected
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                program_id: -1,
+                                                                custom_program_name: prev.program_id && prev.program_id > 0 ? "" : prev.custom_program_name
+                                                            }));
+                                                        } else {
+                                                            // Regular program selected
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                program_id: selectedValue,
+                                                                custom_program_name: ""
+                                                            }));
+                                                        }
+                                                    }}
+                                                    required
+                                                    className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out ${
+                                                        validationErrors.program_id || validationErrors.custom_program_name
+                                                            ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
+                                                            : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
+                                                    }`}
+                                                >
+                                                    <option value={0}>Select Program</option>
+                                                    {programs.map((program) => (
+                                                        <option key={program.id} value={program.id}>
+                                                            {program.name}
+                                                        </option>
+                                                    ))}
+                                                    <option value={-1}>Other (Specify below)</option>
+                                                </select>
+                                                {!isOtherSelected && !hasCustomProgram && (
+                                                    <p className="text-xs text-gray-500 mt-1 mb-2">
+                                                        Select your program from the list above, or choose "Other" if your program is not listed
+                                                    </p>
+                                                )}
+                                                {(isOtherSelected || hasCustomProgram) && (
+                                                    <div className="mt-2">
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Enter Your Program of Study <span className="text-red-500">*</span>
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            name="custom_program_name"
+                                                            value={formData.custom_program_name || ""}
+                                                            onChange={(e) => {
+                                                                const value = e.target.value;
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    custom_program_name: value,
+                                                                    program_id: prev.program_id !== -1 ? -1 : prev.program_id
+                                                                }));
+                                                            }}
+                                                            required
+                                                            placeholder="e.g., B.Sc. Mathematics Education, B.A. English Education, etc."
+                                                            className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out placeholder:text-gray-400 ${
+                                                                validationErrors.program_id || validationErrors.custom_program_name
+                                                                    ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
+                                                                    : "border-blue-400 focus:border-blue-500 focus:ring-blue-200"
+                                                            }`}
+                                                        />
+                                                        <p className="text-xs text-blue-600 mt-1 font-medium">
+                                                            ⚠️ Important: Enter the program name <strong>exactly as it appears on your admission letter</strong> to avoid duplicates.
+                                                        </p>
+                                                    </div>
+                                                )}
+                                                {(validationErrors.program_id || validationErrors.custom_program_name) && (
+                                                    <p className="text-red-600 text-xs mt-1">
+                                                        {validationErrors.program_id?.[0] || validationErrors.custom_program_name?.[0]}
+                                                    </p>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
                                 </div>
 
                                 <div>
