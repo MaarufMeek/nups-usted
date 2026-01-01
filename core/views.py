@@ -110,17 +110,17 @@ def get_user_info(request):
 
 
 
-def create_superuser_view(request):
-    User = get_user_model()
-
-    username = "meek"
-    email = "meek@m2e.com"
-    password = "@nasarabieni"
-
-    if not User.objects.filter(username=username).exists():
-        User.objects.create_superuser(username=username, email=email, password=password)
-        return HttpResponse("Superuser created successfully!")
-    return HttpResponse("Superuser already exists.")
+# def create_superuser_view(request):
+#     User = get_user_model()
+#
+#     username = "meek"
+#     email = "meek@m2e.com"
+#     password = "@nasarabieni"
+#
+#     if not User.objects.filter(username=username).exists():
+#         User.objects.create_superuser(username=username, email=email, password=password)
+#         return HttpResponse("Superuser created successfully!")
+#     return HttpResponse("Superuser already exists.")
 
 
 
