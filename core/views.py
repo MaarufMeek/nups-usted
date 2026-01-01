@@ -1,10 +1,13 @@
 import logging
 
+from django.contrib.auth import get_user_model
+from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
@@ -91,18 +94,33 @@ class WingViewSet(viewsets.ModelViewSet):
 
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_info(request):
+    """Get detailed information about the currently authenticated user"""
+    user = request.user
 
-# def create_superuser_view(request):
-#     User = get_user_model()
-#
-#     username = "nupsadmin"
-#     email = "admin@nups.com"
-#     password = "easypassword123!"
-#
-#     if not User.objects.filter(username=username).exists():
-#         User.objects.create_superuser(username=username, email=email, password=password)
-#         return HttpResponse("Superuser created successfully!")
-#     return HttpResponse("Superuser already exists.")
+    return Response({
+        'id': user.id,
+        'username': user.username,
+        'is_staff': user.is_staff,
+        'is_superuser': user.is_superuser,
+    }, status=200)
+
+
+
+
+def create_superuser_view(request):
+    User = get_user_model()
+
+    username = "meek"
+    email = "meek@m2e.com"
+    password = "@nasarabieni"
+
+    if not User.objects.filter(username=username).exists():
+        User.objects.create_superuser(username=username, email=email, password=password)
+        return HttpResponse("Superuser created successfully!")
+    return HttpResponse("Superuser already exists.")
 
 
 

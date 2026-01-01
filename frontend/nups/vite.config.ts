@@ -7,4 +7,8 @@ export default defineConfig({
   resolve: {
     dedupe: ['react', 'react-dom'], // Ensure only one version of React is used
   },
+      server: {
+    port: 5173,
+    strictPort: true,
+  },
 })

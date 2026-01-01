@@ -6,7 +6,7 @@ import api from "../apiConfig.ts";
 
 
 const AdminLayout = () => {
-    const {logout} = useAuth();
+    const {logout, user} = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [isBackingUp, setIsBackingUp] = useState(false);
 
@@ -77,7 +77,7 @@ const AdminLayout = () => {
                     </NavLink>
                 ))}
 
-                <button
+                { user?.is_superuser && <button
                     onClick={handleBackup}
                     disabled={isBackingUp}
                     className="p-1 text-blue-200 hover:bg-blue-600 rounded-lg transition-colors flex flex-col items-center disabled:opacity-50 disabled:cursor-not-allowed"
@@ -85,7 +85,7 @@ const AdminLayout = () => {
                 >
                     <Download className={`w-6 h-6 text-yellow-300 ${isBackingUp ? 'animate-pulse' : ''}`}/>
                     <span className="text-[10px] mt-1">{isBackingUp ? 'Backing up...' : 'Backup'}</span>
-                </button>
+                </button>}
 
                 <button
                     onClick={logout}

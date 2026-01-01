@@ -9,6 +9,47 @@ interface StudentDetailModalProps {
     onClose: () => void;
 }
 
+
+/******************************************************************************************************************
+ * Fix URLs that start with /media/https%3A/ to proper https:// URLs
+ *
+ * This is a workaround for incorrectly stored URLs that have been URL-encoded
+ * by Django when storing Cloudinary URLs in the database.
+ *
+ * Example conversion:
+ *   Input:  "/media/https%3A/res.cloudinary.com/cloud/image/upload/file.jpg"
+ *   Output: "https://res.cloudinary.com/cloud/image/upload/file.jpg"
+ *
+ * IMPORTANT NOTES:
+ * 1. This fix is ONLY to be used when:
+ *    - Database is backed up from Render with Cloudinary URLs
+ *    - Restoring to localhost for development
+ *    - URLs are incorrectly stored with /media/ prefix and URL encoding
+ *
+ * 2. DO NOT use this function in production
+ *    - Production should store URLs correctly as https:// URLs
+ *    - This is a temporary workaround for local development only
+ *
+ * 3. Usage:
+ *    - Only pass student.id_picture as argument
+ *    - Do NOT combine with toAbsoluteBackendUrl
+ *    - Call this function before displaying images
+ *
+ * 4. When migrating to production:
+ *    - Ensure URLs are stored correctly (not URL-encoded)
+ *    - Remove this function from production code
+ *    - Update the backup function to store proper URLs
+ *
+ * @param url - The URL string that may need fixing
+ * @returns Fixed URL string or empty string if input is falsy
+ ******************************************************************************************************************/
+// const fixUrl = (url: string) => {
+//     if (!url) return '';
+//     return url.startsWith('/media/https%3A/')
+//         ? url.replace('/media/https%3A/', 'https://')
+//         : url;
+// }; // ***************************************************************************************************************
+
 const StudentDetailModal = ({student, onClose}: StudentDetailModalProps) => {
     const [isClosing, setIsClosing] = useState(false);
     const [imageError, setImageError] = useState(false);
