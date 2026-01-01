@@ -209,7 +209,6 @@ def backup_database(request):
     from django.conf import settings
     import datetime as dt
     from datetime import datetime as dt_class
-    import json
 
     try:
         sql_content = ["-- NUPS Database Complete Backup", f"-- Generated: {dt_class.now().isoformat()}",
@@ -220,11 +219,27 @@ def backup_database(request):
         # STORAGE CONFIGURATION INFO
         # ============================================
 
-        # Detect storage backend
+        # BEST FIX: Check USE_CLOUDINARY setting first (from your settings.py)
+        use_cloudinary = getattr(settings, 'USE_CLOUDINARY', False)
+
+        # Also check DEFAULT_FILE_STORAGE as backup detection
         storage_backend = getattr(settings, 'DEFAULT_FILE_STORAGE',
                                   'django.core.files.storage.FileSystemStorage')
 
-        is_cloudinary = 'cloudinary' in storage_backend.lower()
+        # Convert storage backend to string for logging
+        if hasattr(storage_backend, '__name__'):
+            storage_backend_str = storage_backend.__name__
+        elif hasattr(storage_backend, '__class__'):
+            storage_backend_str = storage_backend.__class__.__name__
+        else:
+            storage_backend_str = str(storage_backend)
+
+        # Determine if using Cloudinary (primary: USE_CLOUDINARY setting)
+        is_cloudinary = use_cloudinary
+
+        # If USE_CLOUDINARY not set, fall back to checking class name
+        if not is_cloudinary and isinstance(storage_backend_str, str):
+            is_cloudinary = 'cloudinary' in storage_backend_str.lower()
 
         if is_cloudinary:
             sql_content.append("-- STORAGE: Cloudinary (Production)")
@@ -239,6 +254,7 @@ def backup_database(request):
                 sql_content.append(f"-- Image URLs format: https://res.cloudinary.com/{cloud_name}/image/upload/...")
         else:
             sql_content.append("-- STORAGE: Local (Development)")
+            sql_content.append("-- Storage backend: " + storage_backend_str)
             sql_content.append("-- WARNING: Images are stored locally and NOT included in this backup")
             sql_content.append("-- To backup images, manually copy the 'media' folder")
 
@@ -529,6 +545,7 @@ def backup_database(request):
 
                 # List all image files stored in Cloudinary
                 sql_content.append("-- All images are stored in Cloudinary at:")
+                cloudinary_config = getattr(settings, 'CLOUDINARY_STORAGE', {})
                 if cloudinary_config.get('CLOUD_NAME'):
                     sql_content.append(
                         f"-- https://res.cloudinary.com/{cloudinary_config.get('CLOUD_NAME')}/image/upload/")
@@ -556,7 +573,7 @@ def backup_database(request):
         sql_output = '\n'.join(sql_content)
 
         # Create response
-        timestamp = dt_class.now().strftime('%Y%m%d_%H%M%S')  # <-- Use dt_class
+        timestamp = dt_class.now().strftime('%Y%m%d_%H%M%S')
         filename = f'nups_backup_{timestamp}.sql'
 
         response = HttpResponse(sql_output, content_type='application/sql')
@@ -564,7 +581,8 @@ def backup_database(request):
         response['Content-Length'] = len(sql_output.encode('utf-8'))
 
         logger.info(f"Database backup created and downloaded: {filename}")
-        logger.info(f"Storage backend: {storage_backend}")
+        logger.info(f"USE_CLOUDINARY setting: {use_cloudinary}")
+        logger.info(f"Storage backend: {storage_backend_str}")
         return response
 
     except Exception as e:
