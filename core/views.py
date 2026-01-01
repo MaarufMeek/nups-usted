@@ -211,22 +211,24 @@ def backup_database(request):
     from datetime import datetime as dt_class
 
     try:
-        sql_content = ["-- NUPS Database Complete Backup", f"-- Generated: {dt_class.now().isoformat()}",
-                       "-- Database: PostgreSQL", "-- ============================================",
-                       "-- STORAGE CONFIGURATION", "-- ============================================"]
+        sql_content = []
+        sql_content.append("-- NUPS Database Complete Backup")
+        sql_content.append(f"-- Generated: {dt_class.now().isoformat()}")
+        sql_content.append("-- Database: PostgreSQL")
 
         # ============================================
         # STORAGE CONFIGURATION INFO
         # ============================================
+        sql_content.append("-- ============================================")
+        sql_content.append("-- STORAGE CONFIGURATION")
+        sql_content.append("-- ============================================")
 
-        # BEST FIX: Check USE_CLOUDINARY setting first (from your settings.py)
+        # Check storage configuration
         use_cloudinary = getattr(settings, 'USE_CLOUDINARY', False)
-
-        # Also check DEFAULT_FILE_STORAGE as backup detection
         storage_backend = getattr(settings, 'DEFAULT_FILE_STORAGE',
                                   'django.core.files.storage.FileSystemStorage')
 
-        # Convert storage backend to string for logging
+        # Convert storage backend to string
         if hasattr(storage_backend, '__name__'):
             storage_backend_str = storage_backend.__name__
         elif hasattr(storage_backend, '__class__'):
@@ -234,10 +236,8 @@ def backup_database(request):
         else:
             storage_backend_str = str(storage_backend)
 
-        # Determine if using Cloudinary (primary: USE_CLOUDINARY setting)
+        # Determine if using Cloudinary
         is_cloudinary = use_cloudinary
-
-        # If USE_CLOUDINARY not set, fall back to checking class name
         if not is_cloudinary and isinstance(storage_backend_str, str):
             is_cloudinary = 'cloudinary' in storage_backend_str.lower()
 
@@ -246,15 +246,15 @@ def backup_database(request):
             sql_content.append("-- Images are stored in Cloudinary cloud storage")
             sql_content.append("-- Image URLs will remain accessible after restore")
 
-            # Add Cloudinary config (without secrets)
+            # Add Cloudinary config
             cloudinary_config = getattr(settings, 'CLOUDINARY_STORAGE', {})
             if cloudinary_config:
-                cloud_name = cloudinary_config.get('CLOUD_NAME', 'Not set')
+                cloud_name = cloudinary_config.get('CLOUD_NAME', 'dtm2fwxth')
                 sql_content.append(f"-- Cloud Name: {cloud_name}")
                 sql_content.append(f"-- Image URLs format: https://res.cloudinary.com/{cloud_name}/image/upload/...")
         else:
             sql_content.append("-- STORAGE: Local (Development)")
-            sql_content.append("-- Storage backend: " + storage_backend_str)
+            sql_content.append(f"-- Storage backend: {storage_backend_str}")
             sql_content.append("-- WARNING: Images are stored locally and NOT included in this backup")
             sql_content.append("-- To backup images, manually copy the 'media' folder")
 
@@ -491,6 +491,74 @@ def backup_database(request):
                 sql_content.append(f"-- {len(rows)} records")
                 sql_content.append("")
 
+                # ============================================
+                # SPECIAL HANDLING FOR STUDENTPROFILE IMAGES
+                # Convert relative image paths to full Cloudinary URLs
+                # ============================================
+                if table_name == 'core_studentprofile' and is_cloudinary:
+                    try:
+                        # Find the index of id_picture column
+                        id_picture_index = columns.index('id_picture')
+
+                        # Get Cloudinary configuration
+                        cloudinary_config = getattr(settings, 'CLOUDINARY_STORAGE', {})
+                        cloud_name = cloudinary_config.get('CLOUD_NAME', 'dtm2fwxth')
+
+                        if cloud_name:
+                            # Process each row to convert paths
+                            processed_rows = []
+                            for row in rows:
+                                row_list = list(row)
+
+                                if row_list[id_picture_index]:  # If there's an image
+                                    image_path = row_list[id_picture_index]
+
+                                    # Only convert if not already a full URL
+                                    if image_path and not str(image_path).startswith('http'):
+                                        # Clean path
+                                        clean_path = str(image_path)
+
+                                        # Remove leading slashes
+                                        if clean_path.startswith('/'):
+                                            clean_path = clean_path[1:]
+
+                                        # Remove 'media/' prefix if present
+                                        if clean_path.startswith('media/'):
+                                            clean_path = clean_path[6:]
+
+                                        # IMPORTANT: DO NOT add file extensions!
+                                        # Cloudinary stores files with their original extensions
+                                        # The database stores paths like:
+                                        # - id_pictures/Screenshot_2025-12-24_074958.png
+                                        # - id_pictures/usted_eFffvfw.png
+                                        # - id_pictures/soy.png
+                                        # - id_pictures/PXL_20251230_071810182.PORTRAIT_qlwj1d
+
+                                        # For paths without standard extensions (like .PORTRAIT files),
+                                        # Cloudinary automatically adds the correct extension when serving
+                                        # We should keep the path exactly as stored
+
+                                        # Convert to full Cloudinary URL
+                                        # Note: Cloudinary may add versioning (v1767259980) automatically
+                                        # But we use the simpler format without version
+                                        full_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/{clean_path}"
+                                        row_list[id_picture_index] = full_url
+                                        logger.info(f"Converted image path: {image_path} -> {full_url}")
+
+                                processed_rows.append(tuple(row_list))
+
+                            # Use processed rows instead of original rows
+                            rows = processed_rows
+
+                    except ValueError:
+                        # id_picture column not found, continue with original rows
+                        logger.warning(f"id_picture column not found in {table_name}")
+                        pass
+                    except Exception as e:
+                        logger.error(f"Error processing image paths: {str(e)}")
+                        # Continue with original rows if there's an error
+
+                # Generate INSERT statements for all rows
                 for row in rows:
                     values = []
                     for val in row:
@@ -504,7 +572,7 @@ def backup_database(request):
                             values.append('TRUE' if val else 'FALSE')
                         elif isinstance(val, (int, float)):
                             values.append(str(val))
-                        elif isinstance(val, (dt.date, dt_class)):  # Handle both date and datetime
+                        elif isinstance(val, (dt.date, dt_class)):
                             values.append(f"'{val.isoformat()}'")
                         else:
                             # Convert to string and escape
@@ -518,7 +586,7 @@ def backup_database(request):
                 sql_content.append("")
 
         # ============================================
-        # PART 3: Add image metadata summary (optional)
+        # PART 3: Add image metadata summary
         # ============================================
         if is_cloudinary:
             sql_content.append("-- ============================================")
@@ -546,9 +614,9 @@ def backup_database(request):
                 # List all image files stored in Cloudinary
                 sql_content.append("-- All images are stored in Cloudinary at:")
                 cloudinary_config = getattr(settings, 'CLOUDINARY_STORAGE', {})
-                if cloudinary_config.get('CLOUD_NAME'):
-                    sql_content.append(
-                        f"-- https://res.cloudinary.com/{cloudinary_config.get('CLOUD_NAME')}/image/upload/")
+                cloud_name = cloudinary_config.get('CLOUD_NAME', 'dtm2fwxth')
+                if cloud_name:
+                    sql_content.append(f"-- https://res.cloudinary.com/{cloud_name}/image/upload/")
                 sql_content.append("")
 
                 # Get a few sample image URLs to show format
@@ -561,11 +629,15 @@ def backup_database(request):
                 sample_images = cursor.fetchall()
 
                 if sample_images:
-                    sql_content.append("-- Sample image paths (as stored in database):")
-                    for student_id, first_name, last_name, image_path in sample_images:
-                        if image_path:
+                    sql_content.append("-- Sample image URLs (as stored in database):")
+                    for student_id, first_name, last_name, image_url in sample_images:
+                        if image_url:
+                            # Truncate long URLs for readability
+                            display_url = image_url
+                            if len(display_url) > 80:
+                                display_url = display_url[:77] + "..."
                             sql_content.append(f"-- Student {student_id}: {first_name} {last_name}")
-                            sql_content.append(f"--   Image: {image_path}")
+                            sql_content.append(f"--   URL: {display_url}")
                     sql_content.append("")
 
         sql_content.append("COMMIT;")
@@ -581,8 +653,8 @@ def backup_database(request):
         response['Content-Length'] = len(sql_output.encode('utf-8'))
 
         logger.info(f"Database backup created and downloaded: {filename}")
-        logger.info(f"USE_CLOUDINARY setting: {use_cloudinary}")
-        logger.info(f"Storage backend: {storage_backend_str}")
+        logger.info(f"Cloudinary enabled: {is_cloudinary}")
+        logger.info(f"Backup includes full Cloudinary URLs for images")
         return response
 
     except Exception as e:
