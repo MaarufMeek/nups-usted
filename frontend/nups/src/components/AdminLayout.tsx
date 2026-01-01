@@ -1,18 +1,55 @@
 import {NavLink, Outlet} from 'react-router-dom';
-import {ChevronLeft, ChevronRight, Home, Users, LogOut} from 'lucide-react';
+import {ChevronLeft, ChevronRight, Home, Users, LogOut, Download} from 'lucide-react';
 import {useAuth} from "../contexts/AuthContext.tsx";
 import {useState} from "react";
+import api from "../apiConfig.ts";
 
 
 const AdminLayout = () => {
     const {logout} = useAuth();
     const [isOpen, setIsOpen] = useState(false);
-
+    const [isBackingUp, setIsBackingUp] = useState(false);
 
     const navItems = [
         {to: '/admin', icon: Home, label: 'Dashboard'},
         {to: '/admin/members', icon: Users, label: 'Members'},
     ];
+
+    const handleBackup = async () => {
+        setIsBackingUp(true);
+        try {
+            const response = await api.get('/backup/', {
+                responseType: 'blob', // Important for file downloads
+                timeout: 120000, // 2 minutes timeout for large backups
+            });
+
+            // Create download link
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            
+            // Get filename from Content-Disposition header or use default
+            const contentDisposition = response.headers['content-disposition'];
+            let filename = 'nups_backup.sql';
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
+                if (filenameMatch) {
+                    filename = filenameMatch[1];
+                }
+            }
+            
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error: any) {
+            console.error('Backup failed:', error);
+            alert('Failed to create backup. Please try again.');
+        } finally {
+            setIsBackingUp(false);
+        }
+    };
 
     return (
         <div className="min-h-screen flex bg-gray-50">
@@ -41,12 +78,22 @@ const AdminLayout = () => {
                 ))}
 
                 <button
+                    onClick={handleBackup}
+                    disabled={isBackingUp}
+                    className="p-1 text-blue-200 hover:bg-blue-600 rounded-lg transition-colors flex flex-col items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={isBackingUp ? "Creating backup..." : "Download Database Backup"}
+                >
+                    <Download className={`w-6 h-6 text-yellow-300 ${isBackingUp ? 'animate-pulse' : ''}`}/>
+                    <span className="text-[10px] mt-1">{isBackingUp ? 'Backing up...' : 'Backup'}</span>
+                </button>
+
+                <button
                     onClick={logout}
                     className="mt-auto p-1 text-blue-200 hover:bg-blue-600 rounded-lg transition-colors flex flex-col items-center"
                     title="Logout"
                 >
                     <LogOut className="w-6 h-6 text-yellow-300"/>
-                    Logout
+                    <span className="text-[10px] mt-1">Logout</span>
                 </button>
             </aside>
 

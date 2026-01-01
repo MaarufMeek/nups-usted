@@ -1,5 +1,5 @@
-import os
 import json
+import os
 from datetime import timedelta
 from pathlib import Path
 
@@ -223,10 +223,7 @@ STATICFILES_DIRS = [
 # Note: USE_CLOUDINARY is already set above when configuring INSTALLED_APPS
 if USE_CLOUDINARY:
     # Cloudinary storage for production (persistent, survives deployments)
-    import cloudinary
-    import cloudinary.uploader
-    import cloudinary.api
-    
+
     cloud_name = get_env('CLOUDINARY_CLOUD_NAME', '')
     api_key = get_env('CLOUDINARY_API_KEY', '')
     api_secret = get_env('CLOUDINARY_API_SECRET', '')

@@ -5,8 +5,6 @@ from django.urls import path, include
 from django.http import JsonResponse
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-# from core.views import create_superuser_view, populate_initial_data
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('core.urls')),

@@ -1,23 +1,17 @@
 import logging
+
+from django.utils import timezone
 from rest_framework import viewsets, status
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
-from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
 
 from .models import Program, Hall, StudentProfile, Wing
 from .serializers import ProgramSerializer, HallSerializer, StudentProfileSerializer, WingSerializer
 
 logger = logging.getLogger(__name__)
-
-from django.contrib.auth import get_user_model
-from django.http import HttpResponse, JsonResponse
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from .models import Program, Wing
-from django.utils import timezone
-from datetime import datetime
 
 
 class ProgramViewSet(viewsets.ModelViewSet):
@@ -198,6 +192,387 @@ def health_check(request):
         'timestamp': timezone.now().isoformat(),
         'message': 'Service is running'
     }, status=200)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def backup_database(request):
+    """
+    Create a complete SQL backup from Render (production).
+    Images are stored in Cloudinary, so only SQL is backed up.
+    Image URLs remain accessible after restore.
+
+    GET /api/backup/ - Download SQL backup file
+    """
+    from django.http import HttpResponse
+    from django.db import connection
+    from django.conf import settings
+    import datetime as dt
+    from datetime import datetime as dt_class
+    import json
+
+    try:
+        sql_content = ["-- NUPS Database Complete Backup", f"-- Generated: {dt_class.now().isoformat()}",
+                       "-- Database: PostgreSQL", "-- ============================================",
+                       "-- STORAGE CONFIGURATION", "-- ============================================"]
+
+        # ============================================
+        # STORAGE CONFIGURATION INFO
+        # ============================================
+
+        # Detect storage backend
+        storage_backend = getattr(settings, 'DEFAULT_FILE_STORAGE',
+                                  'django.core.files.storage.FileSystemStorage')
+
+        is_cloudinary = 'cloudinary' in storage_backend.lower()
+
+        if is_cloudinary:
+            sql_content.append("-- STORAGE: Cloudinary (Production)")
+            sql_content.append("-- Images are stored in Cloudinary cloud storage")
+            sql_content.append("-- Image URLs will remain accessible after restore")
+
+            # Add Cloudinary config (without secrets)
+            cloudinary_config = getattr(settings, 'CLOUDINARY_STORAGE', {})
+            if cloudinary_config:
+                cloud_name = cloudinary_config.get('CLOUD_NAME', 'Not set')
+                sql_content.append(f"-- Cloud Name: {cloud_name}")
+                sql_content.append(f"-- Image URLs format: https://res.cloudinary.com/{cloud_name}/image/upload/...")
+        else:
+            sql_content.append("-- STORAGE: Local (Development)")
+            sql_content.append("-- WARNING: Images are stored locally and NOT included in this backup")
+            sql_content.append("-- To backup images, manually copy the 'media' folder")
+
+        sql_content.append("-- ============================================")
+        sql_content.append("")
+
+        sql_content.append("-- This backup includes schema (CREATE TABLE) and data (INSERT)")
+        sql_content.append("-- Restore using: psql -d database_name < backup.sql")
+        sql_content.append("")
+        sql_content.append("BEGIN;")
+        sql_content.append("")
+
+        # ============================================
+        # PART 1: Generate CREATE TABLE statements
+        # ============================================
+        sql_content.append("-- ============================================")
+        sql_content.append("-- SCHEMA: Table Definitions")
+        sql_content.append("-- ============================================")
+        sql_content.append("")
+
+        # Get all tables and order them to respect dependencies
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                           SELECT table_name
+                           FROM information_schema.tables
+                           WHERE table_schema = 'public'
+                             AND table_name LIKE 'core_%'
+                           ORDER BY table_name;
+                           """)
+            all_tables = [row[0] for row in cursor.fetchall()]
+
+            # We need to sort tables so parent tables come before child tables
+            # Get foreign key dependencies
+            table_dependencies = {}
+            for table in all_tables:
+                cursor.execute(f"""
+                    SELECT
+                        ccu.table_name AS parent_table
+                    FROM information_schema.table_constraints AS tc
+                    JOIN information_schema.key_column_usage AS kcu
+                        ON tc.constraint_name = kcu.constraint_name
+                    JOIN information_schema.constraint_column_usage AS ccu
+                        ON ccu.constraint_name = tc.constraint_name
+                    WHERE tc.constraint_type = 'FOREIGN KEY'
+                        AND tc.table_schema = 'public'
+                        AND tc.table_name = '{table}';
+                """)
+                parents = [row[0] for row in cursor.fetchall()]
+                table_dependencies[table] = parents
+
+            # Sort tables by dependencies (topological sort)
+            sorted_tables = []
+            temp_marked = set()
+            perm_marked = set()
+
+            def visit(table):
+                if table in perm_marked:
+                    return
+                if table in temp_marked:
+                    raise ValueError(f"Circular dependency detected with table {table}")
+
+                temp_marked.add(table)
+                for parent in table_dependencies.get(table, []):
+                    if parent in all_tables:  # Only consider core_ tables
+                        visit(parent)
+                temp_marked.remove(table)
+                perm_marked.add(table)
+                sorted_tables.append(table)
+
+            for table in all_tables:
+                if table not in perm_marked:
+                    visit(table)
+
+            # Create tables in dependency order
+            for table_name in sorted_tables:
+                sql_content.append(f"-- Table: {table_name}")
+                sql_content.append(f"DROP TABLE IF EXISTS \"{table_name}\" CASCADE;")
+
+                # Get column definitions
+                cursor.execute(f"""
+                    SELECT 
+                        column_name,
+                        data_type,
+                        character_maximum_length,
+                        is_nullable,
+                        column_default,
+                        numeric_precision,
+                        numeric_scale
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public' AND table_name = '{table_name}'
+                    ORDER BY ordinal_position;
+                """)
+                columns_data = cursor.fetchall()
+
+                # Get primary key
+                cursor.execute(f"""
+                    SELECT column_name
+                    FROM information_schema.table_constraints tc
+                    JOIN information_schema.key_column_usage kcu 
+                        ON tc.constraint_name = kcu.constraint_name
+                    WHERE tc.table_schema = 'public' 
+                        AND tc.table_name = '{table_name}'
+                        AND tc.constraint_type = 'PRIMARY KEY';
+                """)
+                pk_columns = [row[0] for row in cursor.fetchall()]
+
+                # Get foreign keys
+                cursor.execute(f"""
+                    SELECT
+                        kcu.column_name,
+                        ccu.table_name AS foreign_table_name,
+                        ccu.column_name AS foreign_column_name,
+                        rc.delete_rule,
+                        tc.constraint_name
+                    FROM information_schema.table_constraints AS tc
+                    JOIN information_schema.key_column_usage AS kcu
+                        ON tc.constraint_name = kcu.constraint_name
+                    JOIN information_schema.constraint_column_usage AS ccu
+                        ON ccu.constraint_name = tc.constraint_name
+                    JOIN information_schema.referential_constraints AS rc
+                        ON rc.constraint_name = tc.constraint_name
+                    WHERE tc.constraint_type = 'FOREIGN KEY'
+                        AND tc.table_schema = 'public'
+                        AND tc.table_name = '{table_name}';
+                """)
+                foreign_keys = cursor.fetchall()
+
+                # Build CREATE TABLE statement
+                sql_content.append(f"CREATE TABLE \"{table_name}\" (")
+
+                column_defs = []
+                for col_data in columns_data:
+                    col_name, data_type, max_length, is_nullable, default, precision, scale = col_data
+
+                    col_def = f'"{col_name}"'
+
+                    # Build data type
+                    if data_type == 'character varying':
+                        col_def += f" VARCHAR({max_length})" if max_length else " VARCHAR"
+                    elif data_type == 'character':
+                        col_def += f" CHAR({max_length})" if max_length else " CHAR"
+                    elif data_type == 'numeric':
+                        if precision and scale:
+                            col_def += f" NUMERIC({precision},{scale})"
+                        elif precision:
+                            col_def += f" NUMERIC({precision})"
+                        else:
+                            col_def += " NUMERIC"
+                    elif data_type == 'integer':
+                        col_def += " INTEGER"
+                    elif data_type == 'bigint':
+                        col_def += " BIGINT"
+                    elif data_type == 'smallint':
+                        col_def += " SMALLINT"
+                    elif data_type == 'boolean':
+                        col_def += " BOOLEAN"
+                    elif data_type == 'date':
+                        col_def += " DATE"
+                    elif data_type == 'timestamp with time zone':
+                        col_def += " TIMESTAMP WITH TIME ZONE"
+                    elif data_type == 'timestamp without time zone':
+                        col_def += " TIMESTAMP WITHOUT TIME ZONE"
+                    elif data_type == 'text':
+                        col_def += " TEXT"
+                    else:
+                        col_def += f" {data_type.upper()}"
+
+                    # Primary key
+                    if col_name in pk_columns:
+                        if 'SERIAL' in col_def or 'BIGSERIAL' in col_def:
+                            pass  # Already includes PRIMARY KEY
+                        else:
+                            col_def += " PRIMARY KEY"
+
+                    # NULL/NOT NULL
+                    if is_nullable == 'NO' and col_name not in pk_columns:
+                        col_def += " NOT NULL"
+
+                    # Default value
+                    if default:
+                        # Clean up default (remove ::type casts)
+                        default_clean = default.split('::')[0].strip()
+                        col_def += f" DEFAULT {default_clean}"
+
+                    column_defs.append(col_def)
+
+                sql_content.append(",\n".join(column_defs))
+
+                # Add foreign key constraints AFTER column definitions
+                if foreign_keys:
+                    sql_content.append(",\n")
+                    fk_constraints = []
+                    for fk in foreign_keys:
+                        col_name, foreign_table, foreign_col, delete_rule, constraint_name = fk
+                        delete_action = delete_rule.upper() if delete_rule else 'NO ACTION'
+                        fk_constraints.append(
+                            f'    CONSTRAINT "{constraint_name}" FOREIGN KEY ("{col_name}") '
+                            f'REFERENCES "{foreign_table}" ("{foreign_col}") '
+                            f'ON DELETE {delete_action}'
+                        )
+                    sql_content.append(",\n".join(fk_constraints))
+
+                sql_content.append(");")
+                sql_content.append("")
+
+        # ============================================
+        # PART 2: Generate INSERT statements (data)
+        # ============================================
+        sql_content.append("-- ============================================")
+        sql_content.append("-- DATA: Insert Statements")
+        sql_content.append("-- ============================================")
+        sql_content.append("")
+
+        # We'll query each table directly instead of using dumpdata
+        with connection.cursor() as cursor:
+            for table_name in sorted_tables:
+                # Get column names for this table
+                cursor.execute(f"""
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public' AND table_name = '{table_name}'
+                    ORDER BY ordinal_position;
+                """)
+                columns = [row[0] for row in cursor.fetchall()]
+
+                # Get all data from table
+                cursor.execute(f'SELECT * FROM "{table_name}" ORDER BY id;')
+                rows = cursor.fetchall()
+
+                if not rows:
+                    continue
+
+                sql_content.append(f"-- Data for {table_name}")
+                sql_content.append(f"-- {len(rows)} records")
+                sql_content.append("")
+
+                for row in rows:
+                    values = []
+                    for val in row:
+                        if val is None:
+                            values.append('NULL')
+                        elif isinstance(val, str):
+                            # Escape single quotes and backslashes
+                            escaped = val.replace("\\", "\\\\").replace("'", "''")
+                            values.append(f"'{escaped}'")
+                        elif isinstance(val, bool):
+                            values.append('TRUE' if val else 'FALSE')
+                        elif isinstance(val, (int, float)):
+                            values.append(str(val))
+                        elif isinstance(val, (dt.date, dt_class)):  # Handle both date and datetime
+                            values.append(f"'{val.isoformat()}'")
+                        else:
+                            # Convert to string and escape
+                            escaped = str(val).replace("\\", "\\\\").replace("'", "''")
+                            values.append(f"'{escaped}'")
+
+                    col_list = ', '.join(f'"{col}"' for col in columns)
+                    val_list = ', '.join(values)
+                    sql_content.append(f'INSERT INTO "{table_name}" ({col_list}) VALUES ({val_list});')
+
+                sql_content.append("")
+
+        # ============================================
+        # PART 3: Add image metadata summary (optional)
+        # ============================================
+        if is_cloudinary:
+            sql_content.append("-- ============================================")
+            sql_content.append("-- IMAGE METADATA SUMMARY")
+            sql_content.append("-- ============================================")
+            sql_content.append("")
+
+            with connection.cursor() as cursor:
+                # Count students with ID pictures
+                cursor.execute("""
+                               SELECT COUNT(*)                     as total_students,
+                                      COUNT(id_picture)            as students_with_pictures,
+                                      COUNT(*) - COUNT(id_picture) as students_without_pictures
+                               FROM core_studentprofile
+                               """)
+                counts = cursor.fetchone()
+
+                if counts:
+                    total, with_pics, without_pics = counts
+                    sql_content.append(f"-- Total students: {total}")
+                    sql_content.append(f"-- Students with ID pictures: {with_pics}")
+                    sql_content.append(f"-- Students without ID pictures: {without_pics}")
+                    sql_content.append("")
+
+                # List all image files stored in Cloudinary
+                sql_content.append("-- All images are stored in Cloudinary at:")
+                if cloudinary_config.get('CLOUD_NAME'):
+                    sql_content.append(
+                        f"-- https://res.cloudinary.com/{cloudinary_config.get('CLOUD_NAME')}/image/upload/")
+                sql_content.append("")
+
+                # Get a few sample image URLs to show format
+                cursor.execute("""
+                               SELECT id, first_name, last_name, id_picture
+                               FROM core_studentprofile
+                               WHERE id_picture IS NOT NULL
+                               LIMIT 3
+                               """)
+                sample_images = cursor.fetchall()
+
+                if sample_images:
+                    sql_content.append("-- Sample image paths (as stored in database):")
+                    for student_id, first_name, last_name, image_path in sample_images:
+                        if image_path:
+                            sql_content.append(f"-- Student {student_id}: {first_name} {last_name}")
+                            sql_content.append(f"--   Image: {image_path}")
+                    sql_content.append("")
+
+        sql_content.append("COMMIT;")
+
+        sql_output = '\n'.join(sql_content)
+
+        # Create response
+        timestamp = dt_class.now().strftime('%Y%m%d_%H%M%S')  # <-- Use dt_class
+        filename = f'nups_backup_{timestamp}.sql'
+
+        response = HttpResponse(sql_output, content_type='application/sql')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Content-Length'] = len(sql_output.encode('utf-8'))
+
+        logger.info(f"Database backup created and downloaded: {filename}")
+        logger.info(f"Storage backend: {storage_backend}")
+        return response
+
+    except Exception as e:
+        logger.error(f"Backup failed: {str(e)}", exc_info=True)
+        return Response(
+            {'error': str(e), 'detail': 'Failed to create database backup'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 
