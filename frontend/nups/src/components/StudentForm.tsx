@@ -90,7 +90,6 @@ const StudentForm = () => {
                                         name="first_name"
                                         value={formData.first_name}
                                         onChange={handleChange}
-                                        required
                                         placeholder="Enter your first name"
                                         className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out placeholder:text-gray-400 ${
                                             validationErrors.first_name
@@ -114,7 +113,6 @@ const StudentForm = () => {
                                         name="last_name"
                                         value={formData.last_name}
                                         onChange={handleChange}
-                                        required
                                         placeholder="Enter your last name"
                                         className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out placeholder:text-gray-400 ${
                                             validationErrors.last_name
@@ -152,7 +150,6 @@ const StudentForm = () => {
                                         name="date_of_birth"
                                         value={formData.date_of_birth}
                                         onChange={handleChange}
-                                        required
                                         className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out placeholder:text-gray-400 ${
                                             validationErrors.date_of_birth
                                                 ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
@@ -174,7 +171,6 @@ const StudentForm = () => {
                                         name="gender"
                                         value={formData.gender}
                                         onChange={handleChange}
-                                        required
                                         className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out ${
                                             validationErrors.gender
                                                 ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
@@ -194,7 +190,6 @@ const StudentForm = () => {
                                         name="marital_status"
                                         value={formData.marital_status}
                                         onChange={handleChange}
-                                        required
                                         className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out ${
                                             validationErrors.marital_status
                                                 ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
@@ -229,7 +224,6 @@ const StudentForm = () => {
                                         name="contact"
                                         value={formData.contact}
                                         onChange={handleChange}
-                                        required
                                         maxLength={10}
                                         placeholder="e.g., 0244123456"
                                         className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out placeholder:text-gray-400 ${
@@ -254,7 +248,6 @@ const StudentForm = () => {
                                         name="email"
                                         value={formData.email}
                                         onChange={handleChange}
-                                        required
                                         placeholder="e.g., student@example.com"
                                         className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out placeholder:text-gray-400 ${
                                             validationErrors.email
@@ -298,7 +291,6 @@ const StudentForm = () => {
                                                             handleChange(e);
                                                         }
                                                     }}
-                                                    required
                                                     className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out ${
                                                         validationErrors.place_of_residence
                                                             ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
@@ -338,7 +330,6 @@ const StudentForm = () => {
                                                                     target: { name: "place_of_residence", value: customValue || "Outside Campus" }
                                                                 } as ChangeEvent<HTMLInputElement>);
                                                             }}
-                                                            required
                                                             placeholder="e.g., Tanoso, Apatrapa, IPT, etc."
                                                             className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out placeholder:text-gray-400 ${
                                                                 validationErrors.place_of_residence
@@ -347,7 +338,7 @@ const StudentForm = () => {
                                                             }`}
                                                         />
                                                         <p className="text-xs text-gray-500 mt-1">
-                                                            Enter the name of the city, town, or area where you currently reside
+                                                            Enter the name of the town, or area where you currently reside
                                                         </p>
                                                     </div>
                                                 )}
@@ -404,7 +395,6 @@ const StudentForm = () => {
                                                             }));
                                                         }
                                                     }}
-                                                    required
                                                     className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out ${
                                                         validationErrors.program_id || validationErrors.custom_program_name
                                                             ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"
@@ -450,7 +440,7 @@ const StudentForm = () => {
                                                             }`}
                                                         />
                                                         <p className="text-xs text-blue-600 mt-1 font-medium">
-                                                            ⚠️ Important: Enter the program name <strong>exactly as it appears on your admission letter</strong> to avoid duplicates.
+                                                            Important: Enter the program name <strong>exactly as it appears on your admission letter</strong> to avoid duplicates.
                                                         </p>
                                                     </div>
                                                 )}
@@ -472,7 +462,6 @@ const StudentForm = () => {
                                         name="hall_id"
                                         value={formData.hall_id}
                                         onChange={handleChange}
-                                        required
                                         className={`w-full px-4 py-2.5 border rounded text-sm focus:outline-none focus:ring-1 transition-all duration-150 ease-in-out ${
                                             validationErrors.hall_id
                                                 ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-200"

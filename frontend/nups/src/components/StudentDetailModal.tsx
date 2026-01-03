@@ -134,9 +134,8 @@ const StudentDetailModal = ({student, onClose}: StudentDetailModalProps) => {
                             </div>
                         )}
 
-                        <h3 className="mt-6 text-2xl font-bold text-gray-800">
-                            {student.first_name} {student.last_name}
-                            {student.other_name && <span className="text-lg font-normal"> {student.other_name}</span>}
+                        <h3 className="mt-6 text-xl text-center font-bold text-gray-800">
+                            {student.first_name} {student.last_name} {student.other_name &&  student.other_name}
                         </h3>
                         <p className="text-sm text-gray-500 mt-1">{student.email}</p>
                     </div>

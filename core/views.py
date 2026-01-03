@@ -124,78 +124,6 @@ def get_user_info(request):
 
 
 
-# Predefined data
-# PROGRAMS = [
-#     "B. A. Arabic Education",
-#     "B. A. English Education",
-#     "B. A. French Education",
-#     "B. A. French with English Education",
-#     "B. A. Social Studies with Economics Education",
-#     "B.Ed. Early Grade (Early Childhood)",
-#     "B. Sc. Fashion Design and Textiles Education",
-#     "B. Sc. Catering and Hospitality Education",
-#     "B. B. A. Secretarial Education",
-#     "B. Sc. Management Education",
-#     "B. Sc. Marketing",
-#     "B. B. A. Executive Office Administration",
-#     "B. Sc. Marketing and Entrepreneurship",
-#     "B.B.A. Human Resource Management",
-#     "B. Sc. Economics with Social Studies Education",
-#     "B. Sc. Economics Education",
-#     "B. Sc. Accounting Education",
-#     "B. Sc. Admin Accounting",
-#     "B. Sc. Procurement and Supply Chain Management",
-#     "B. Sc. Banking and Finance",
-#     "B. Sc. Business Information Systems",
-#     "B. Sc. Mathematics Education",
-#     "B. Sc. Information Technology Education",
-#     "B.Sc. Information Technology",
-#     "B.Sc. Cybersecurity and Digital Forensics",
-#     "B. Sc. Automotive Engineering Technology Education",
-#     "B. Sc. Mechanical Engineering Technology Education",
-#     "B.Sc. Construction Technology and Management with Education",
-#     "B.Sc. Welding and Fabrication Engineering Technology Education",
-#     "B.Sc. Plumbing, Gas and Sanitary Technology",
-#     "B.Sc Civil Engineering",
-#     "B.Sc. Wood Technology with Education",
-#     "B. Sc. Electrical and Electronics Engineering Technology Education",
-#     "B.Sc. Mechanical Engineering Technology",
-#     "B.Sc. Electrical and Electronics Engineering",
-#     "2-year Post-Diploma in Construction Technology",
-#     "2-year Post-Diploma in Automotive Engineering Technology",
-#     "2-year Post-Diploma in Electrical and Electronics Engineering Technology",
-#     "2-year Diploma in Wood Technology",
-#     "2-year Diploma Business Admin Accounting",
-#     "Diploma in Human Resource Management",
-#     "Diploma in Office Management and Computer Applications",
-#     "2-year Diploma Business Admin Management",
-# ]
-
-
-# @api_view(['GET', 'POST'])
-# @permission_classes([AllowAny])
-# def populate_initial_data(request):
-#     # Programs
-#     created_programs = []
-#     for program_name in PROGRAMS:
-#         obj, created = Program.objects.get_or_create(name=program_name)
-#         if created:
-#             created_programs.append(program_name)
-#
-#     # Wings
-#     created_wings = []
-#     for wing_name in WINGS:
-#         obj, created = Wing.objects.get_or_create(name=wing_name)
-#         if created:
-#             created_wings.append(wing_name)
-#
-#     return JsonResponse({
-#         "programs_created": created_programs,
-#         "wings_created": created_wings,
-#         "message": "Initial data population complete."
-#     })
-
-
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def health_check(request):
@@ -210,6 +138,7 @@ def health_check(request):
         'timestamp': timezone.now().isoformat(),
         'message': 'Service is running'
     }, status=200)
+
 
 
 @api_view(['GET'])
@@ -229,17 +158,13 @@ def backup_database(request):
     from datetime import datetime as dt_class
 
     try:
-        sql_content = []
-        sql_content.append("-- NUPS Database Complete Backup")
-        sql_content.append(f"-- Generated: {dt_class.now().isoformat()}")
-        sql_content.append("-- Database: PostgreSQL")
+        sql_content = ["-- NUPS Database Complete Backup", f"-- Generated: {dt_class.now().isoformat()}",
+                       "-- Database: PostgreSQL", "-- ============================================",
+                       "-- STORAGE CONFIGURATION", "-- ============================================"]
 
         # ============================================
         # STORAGE CONFIGURATION INFO
         # ============================================
-        sql_content.append("-- ============================================")
-        sql_content.append("-- STORAGE CONFIGURATION")
-        sql_content.append("-- ============================================")
 
         # Check storage configuration
         use_cloudinary = getattr(settings, 'USE_CLOUDINARY', False)
