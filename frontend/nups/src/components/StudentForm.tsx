@@ -325,7 +325,7 @@ const StudentForm = () => {
                                                             name="custom_residence"
                                                             value={formData.place_of_residence === "Outside Campus" ? "" : formData.place_of_residence}
                                                             onChange={(e) => {
-                                                                const customValue = e.target.value.trim();
+                                                                const customValue = e.target.value;
                                                                 handleChange({
                                                                     target: { name: "place_of_residence", value: customValue || "Outside Campus" }
                                                                 } as ChangeEvent<HTMLInputElement>);

@@ -245,6 +245,26 @@ export const useStudentForm = () => {
         });
     };
 
+    // Convert text to Title Case
+    const toTitleCase = (text: string | undefined): string => {
+        if (!text) return "";
+
+        // Trim and check if empty after trimming
+        const trimmed = text.trim();
+        if (trimmed === "") return "";
+
+        return trimmed
+            .toLowerCase()
+            .split(/\s+/)
+            .map(word => {
+                // Handle empty words (multiple spaces)
+                if (!word) return "";
+                return word[0].toUpperCase() + word.slice(1);
+            })
+            .join(" ")
+            .trim();
+    }
+
 
     const validateAllFields = useCallback((data: Partial<StudentProfile> = formData): Record<string, string[]> => {
         const errors: Record<string, string[]> = {};
@@ -356,27 +376,26 @@ export const useStudentForm = () => {
 
 
                 const studentData: StudentProfile = {
-                    first_name: formData.first_name!.trim(),
-                    last_name: formData.last_name!.trim(),
-                    other_name: formData.other_name || "",
+                    first_name: formData.first_name ? toTitleCase(formData.first_name) : "",
+                    last_name: formData.last_name ? toTitleCase(formData.last_name) : "",
+                    other_name: formData.other_name ? toTitleCase(formData.other_name) : "",
                     date_of_birth: formData.date_of_birth!,
                     gender: formData.gender || "Male",
                     marital_status: formData.marital_status || "Single",
                     contact: formData.contact!.trim(),
-                    email: formData.email!.trim(),
-                    place_of_residence: formData.place_of_residence!,
+                    email: formData.email!.trim().toLowerCase(),
+                    place_of_residence: formData.place_of_residence ? toTitleCase(formData.place_of_residence) : "",
 
                     // program logic: if custom_program_name provided, set program_id undefined
                     program_id: formData.custom_program_name ? undefined : formData.program_id!,
-                    custom_program_name: formData.custom_program_name || undefined,
+                    custom_program_name: formData.custom_program_name ? toTitleCase(formData.custom_program_name) : undefined,
                     hall_id: formData.hall_id!,
                     wing_ids: formData.wing_ids || [],
                     emergency_contact_data: {
-                        name: formData.emergency_contact_data?.name || "",
+                        name: formData.emergency_contact_data?.name ? toTitleCase(formData.emergency_contact_data.name) : "",
                         phone: formData.emergency_contact_data?.phone || "",
                     },
                     id_picture: finalIdPicture,
-
                 };
 
                 await submitStudentProfile(studentData);
