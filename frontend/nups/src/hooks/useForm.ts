@@ -354,11 +354,29 @@ export const useStudentForm = () => {
                     finalIdPicture = await compressImage(finalIdPicture);
                 }
 
-                const studentData: Partial<StudentProfile> = {
-                    ...formData,
+
+                const studentData: StudentProfile = {
+                    first_name: formData.first_name!.trim(),
+                    last_name: formData.last_name!.trim(),
+                    other_name: formData.other_name || "",
+                    date_of_birth: formData.date_of_birth!,
+                    gender: formData.gender || "Male",
+                    marital_status: formData.marital_status || "Single",
+                    contact: formData.contact!.trim(),
+                    email: formData.email!.trim(),
+                    place_of_residence: formData.place_of_residence!,
+
+                    // program logic: if custom_program_name provided, set program_id undefined
                     program_id: formData.custom_program_name ? undefined : formData.program_id!,
                     custom_program_name: formData.custom_program_name || undefined,
+                    hall_id: formData.hall_id!,
+                    wing_ids: formData.wing_ids || [],
+                    emergency_contact_data: {
+                        name: formData.emergency_contact_data?.name || "",
+                        phone: formData.emergency_contact_data?.phone || "",
+                    },
                     id_picture: finalIdPicture,
+
                 };
 
                 await submitStudentProfile(studentData);

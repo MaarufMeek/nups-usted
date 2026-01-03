@@ -113,7 +113,7 @@ const compressImage = (file: File, maxWidth: number = 1920, quality: number = 0.
  * Submit a new student profile
  */
 export const submitStudentProfile = async (
-    data: Partial<StudentProfile>
+    data: StudentProfile
 ): Promise<StudentProfile> => {
     // Compress image if provided (reduces upload time, especially on mobile)
     let imageFile = data.id_picture;
